@@ -1,0 +1,43 @@
+HEADER;ROLE;RoleName;RoleDescription;RoleDisplayName;RoleIconName;RoleIconPath
+HEADER;USER;UserName;UserPassword;UserEnable;UserFirstName;UserLastName;UserIconName;UserIconPath;UserTitle;UserJobTitle;UserManagerUserName;PROContactAddress;PROContactBuilding;PROContactCity;PROContactCountry;PROContactEmail;PROContactFaxNumber;PROContactMobileNumber;PROContactPhoneNumber;PROContactRoom;PROContactState;PROContactWebsite;PROContactZipCode;PERContactAddress;PERContactBuilding;PERContactCity;PERContactCountry;PERContactEmail;PERContactFaxNumber;PERContactMobileNumber;PERContactPhoneNumber;PERContactRoom;PERContactState;PERContactWebsite;PERContactZipCode
+HEADER;GROUP;GroupName;GroupDescription;GroupDisplayName;GroupIconName;GroupIconPath;GroupParentPath
+HEADER;MEMBERSHIP;UserName;RoleName;GroupPath
+HEADER;PROFILE;ProfileName;ProfileDescription
+HEADER;PROFILEMEMBER;ProfileName;UserName;RoleName;GroupPath
+# data now
+# ------------- user
+USER;Francis.Huster;bpm;True;Francis;Huster;Huster.gif;c:/tmp;Docteur;Artist;;Gaumont;Immeuble Carmenia;Paris;France;francis.huster@gaumont.fr;FaxFaumont;06 501 501;01 501 501;Room 51;Ile de France;http://gaumont.fr/huster;75000;Rte Chambery;Charmette;Le versoud;Italie;francis.huster@laposte.net;Fax Perso;06 443 553;04 32 33 22;Room du haut;California;http://Francis.Huster;94706]
+USER;Walter.Bates;bpm;True;Walter;Bates;Huster.gif;c:/tmp;Docteur;Artist;Francis.Huster;Gaumont;Immeuble Carmenia;Paris;France;francis.huster@gaumont.fr;FaxFaumont;06 501 501;01 501 501;Room 51;Ile de France;http://gaumont.fr/huster;75000;Rte Chambery;Charmette;Le versoud;Italie;francis.huster@laposte.net;Fax Perso;06 443 553;04 32 33 22;Room du haut;California;http://Francis.Huster;94706]
+USER;Jean.Dujardin;bpm;True;jean;Dujardin;Huster.gif;c:/tmp;Jedi;Artist;Francis.Huster;Gaumont;Immeuble Carmenia;Paris;France;francis.huster@gaumont.fr;FaxFaumont;06 501 501;01 501 501;Room 51;Ile de France;http://gaumont.fr/huster;75000;Rte Chambery;Charmette;Le versoud;Italie;francis.huster@laposte.net;Fax Perso;06 443 553;04 32 33 22;Room du haut;California;http://Francis.Huster;94706]
+USER;George.Cloney;bpm;True;George;Cloney;Huster.gif;c:/tmp;Jedi;Artist;Francis.Huster;Gaumont;Immeuble Carmenia;Paris;France;George.Cloney@gaumont.fr;FaxFaumont;06 501 501;01 501 501;Room 51;Ile de France;http://gaumont.fr/huster;75000;Rte Chambery;Charmette;Le versoud;Italie;francis.huster@laposte.net;Fax Perso;06 443 553;04 32 33 22;Room du haut;California;http://Francis.Huster;94706]
+
+# ------------ role
+ROLE;TSRoleBook;The role to see a book;Role book;Book.gif;c:/tmp/bob
+ROLE;TSRolePurchaser;The role to purchase a book;Purchase book;purchase.gif;c:/tmp/bob
+# ------------ group
+GROUP;Bonitasoft;All bonitasoft group;Bonitasoft Head;myIcon;MyIconpath;
+GROUP;Consultant;bonitasoft Consultant;Bonitasoft Consulant;myIcon;MyIconpath;/Bonitasoft
+GROUP;Consultant US;bonitasoft Consultant US;Bonitasoft Cons. US;myIcon;MyIconpath;/Bonitasoft/Consultant
+GROUP;Consultant FR;bonitasoft Consultant FR;Bonitasoft Cons. FR;myIcon;MyIconpath;/Bonitasoft/Consultant
+#-------------- Membership
+MEMBERSHIP;Francis.Huster;TSRoleBook;/Bonitasoft/Consultant/Consultant FR
+MEMBERSHIP;Francis.Huster;TSRoleBook;/Bonitasoft/Consultant/Consultant US
+MEMBERSHIP;Walter.Bates;TSRoleBook;/Bonitasoft/Consultant/Consultant US
+#-------------- Profile
+PROFILE;MySpecialProfile;only for walter
+PROFILE;MypublicProfile;Walter and francis
+PROFILE;Custom;walter and francis too
+#-------------- ProfileMemberShip
+PROFILEMEMBER;User;Walter.Bates
+PROFILEMEMBER;Administrator;Walter.Bates
+PROFILEMEMBER;MySpecialProfile;Walter.Bates
+PROFILEMEMBER;MypublicProfile;Walter.Bates
+PROFILEMEMBER;MypublicProfile;Francis.Huster
+PROFILEMEMBER;MypublicProfile;;;Bonitasoft
+PROFILEMEMBER;MypublicProfile;;TSRoleBook
+PROFILEMEMBER;Custom;Walter.Bates
+PROFILEMEMBER;Custom;Francis.Huster
+
+
+
+

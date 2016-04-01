@@ -1,0 +1,291 @@
+<!doctype html>
+<!--[if lt IE 7]>
+<html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>
+<html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>
+<html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js">
+<!--<![endif]-->
+<head>
+<meta charset="utf-8">
+<title>BAR Digester</title>
+<meta name="description" content="">
+<meta name="viewport" content="width=device-width">
+<link rel="stylesheet"
+	href="pageResource?page=custompage_american&location=style/animate.css" />
+<link rel="stylesheet"
+	href="pageResource?page=custompage_american&location=style/bootstrap.min.css">
+<link rel="stylesheet"
+	href="pageResource?page=custompage_american&location=style/main.css">
+<link rel="stylesheet"
+	href="pageResource?page=custompage_american&location=css/toaster.css" />
+<link rel="stylesheet"
+	href="pageResource?page=custompage_american&location=css/dropbox.css" />
+</head>
+<body ng-app="american">
+	<!-- Third party dependencies -->
+	<script type="text/javascript">
+		FileAPI = {
+			debug : true,
+		//forceLoad: true, html5: false //to debug flash in HTML5 browsers
+		//wrapInsideDiv: true, //experimental for fixing css issues
+		//only one of jsPath or jsUrl.
+		//jsPath: '/js/FileAPI.min.js/folder/', 
+		//jsUrl: 'yourcdn.com/js/FileAPI.min.js',
+
+		//only one of staticPath or flashUrl.
+		//staticPath: '/flash/FileAPI.flash.swf/folder/'
+		//flashUrl: 'yourcdn.com/js/FileAPI.flash.swf'
+		};
+	</script>
+	<script
+		src="pageResource?page=custompage_american&location=3rd-party/jquery.min.js"></script>
+
+	<script
+		src="pageResource?page=custompage_american&location=3rd-party/angular.min.js"></script>
+
+	<script
+		src="pageResource?page=custompage_american&location=3rd-party/angular-resource.min.js"></script>
+
+	<script
+		src="pageResource?page=custompage_american&location=3rd-party/angular-cookies.min.js"></script>
+
+	<script
+		src="pageResource?page=custompage_american&location=3rd-party/bootstrap/js/bootstrap.min.js"></script>
+
+	<script
+		src="pageResource?page=custompage_american&location=3rd-party/angular-bootstrap-tpls.min.js"></script>
+
+	<script
+		src="pageResource?page=custompage_american&location=3rd-party/angular-timer.js"></script>
+
+	<script
+		src="pageResource?page=custompage_american&location=js/angular-animate.min.js"></script>
+
+	<script
+		src="pageResource?page=custompage_american&location=js/toaster.js"></script>
+
+	<script
+		src="pageResource?page=custompage_american&location=american.js"></script>
+
+	<script
+		src="pageResource?page=custompage_american&location=js/angular-file-upload-shim.min.js"></script>
+
+	<script
+		src="pageResource?page=custompage_american&location=js/angular-file-upload.min.js"></script>
+		
+	<div class="bs-component"  ng-controller="MainController as mainctrl">
+
+	<center>
+	<table><tr><td><h1>American</h1></td><td rowspan="2"><img src="pageResource?page=custompage_american&location=img/american.jpg" width="150" heigth="150" /></td></tr>
+		<tr><td style="font-size:0.8em"> <a href="" ng-click="mainctrl.showhistory( ! mainctrl.isshowhistory )">V1.0</a></td></tr>
+		<tr><td>
+		<div id="showHistory" ng-show="mainctrl.isshowhistory" style="border-width:2px;border-style:ridge;border-color:blue">
+		1.0 March 10 2015 First version<br>
+		1.1 March 17 2015 Add Profile User policy for new users
+		</td></tr>
+		</div>
+	</table>
+	</center>
+</div>
+		
+		
+	<div class="container">
+		<div class="row">
+			<div class="col-Mg-6">
+				<div class="bs-component" ng-controller="DigesterController as actions">
+					<div class="header">
+						<h1><div style="display: inline-block;"></div>American properties</h1>
+					</div>
+<!--					<timer interval="5000" />-->
+					<div class="panel panel-primary">
+						<div class="panel-body">
+							<form name="setpropertiesform"
+								ng-submit="actions.setproperties()" novalidate>
+								<div class="form-group">
+									<label for="dropzone">Drop Zone</label> <input type="text"
+										class="form-control" id="dropzone" ng-model="dropzonenewvalue" required>
+								</div>
+								<div class="form-group">
+									<label for="archivezone">Archive Zone</label> <input
+										type="text" class="form-control" id="archivezone"
+										ng-model="archivezonenewvalue" required>
+								</div>
+								<div class="form-group">
+									<label for="archivezone">Options</label> 
+									<table >
+									<tr>
+										<td style="padding-right: 40px">
+											Group
+											<select class="form-control" ng-model="optoperationgroups" >
+												<option value="BOTH" >Insert/Update</option>
+												<option value="INSERTONLY">Insert only</option>										  
+												<option value="UPDATEONLY">Update only</option>										  
+												<option value="NONE">No operation</option>										  
+											</select>									
+										</td>
+										<td style="padding-right: 40px">
+											Roles
+											<select class="form-control" ng-model="optoperationroles" >
+												<option value="BOTH" >Insert/Update</option>
+												<option value="INSERTONLY">Insert only</option>										  
+												<option value="UPDATEONLY">Update only</option>										  
+												<option value="NONE">No operation</option>										  
+											</select>									
+										</td>
+										<td style="padding-right: 40px">
+											Users
+											<select class="form-control" ng-model="optoperationusers" >
+												<option value="BOTH" >Insert/Update</option>
+												<option value="INSERTONLY">Insert only</option>										  
+												<option value="UPDATEONLY">Update only</option>										  
+												<option value="NONE">No operation</option>										  
+											</select>
+										</td>
+										<td style="padding-right: 40px">
+											Profiles
+											<select class="form-control" ng-model="optoperationprofiles" >
+												<option value="BOTH" >Insert/Update</option>
+												<option value="INSERTONLY">Insert only</option>										  
+												<option value="UPDATEONLY">Update only</option>										  
+												<option value="NONE">No operation</option>										  
+											</select>
+										</td>
+										<td style="padding-right: 40px">
+											Profiles members
+											<select class="form-control" ng-model="optoperationprofilemembers" >
+												<option value="BOTH" >Insert/Update</option>
+												<option value="INSERTONLY">Insert only</option>										  
+												<option value="UPDATEONLY">Update only</option>										  
+												<option value="NONE">No operation</option>										  
+											</select>
+										</td>
+										</tr><tr>
+										<td>
+											Purge Groups
+											<input type="checkbox"  id="purgeUser" ng-model="optpurgegroups" title="If checked, all groups which are not in the source are deleted"/>	
+										</td>
+										<td>
+											Purge Roles                                     
+											<input type="checkbox"  id="purgeUser" ng-model="optpurgeroles" title="If checked, all Roles which are not in the source are deleted"/>	
+										</td>
+										<td>
+											Purge Users
+											<input type="checkbox"  id="purgeUser" ng-model="optpurgeusers" title="If checked, all users which are not in the source are deleted"/>	
+										</td>
+										<td>
+											Purge Profiles
+											<input type="checkbox"  id="purgeUser" ng-model="optpurgeprofiles" title="If checked, all profiles (except the systems one ; User, Administrator, Process Manager) which are not in the source are deleted"/>	
+										</td>										
+										</tr>
+										<tr>
+										<td></td>
+										<td></td>
+										<td>
+											New Users and Profile 'User':
+											<select class="form-control" ng-model="optregisternewuserinprofileuser" title="For each new users, apply the procedure. If Always Insert, the new user is registered<br>If only empty, the user is registered only if he don't have any profile" >
+												<option value="NONE" >No operation</option>
+												<option value="ALWAYSUSERPROFILE">Always insert</option>										  
+												<option value="USERPROFILEIFNOTREGISTER">Insert in the profile only if empty</option>										  
+											</select>
+										</td>
+										<td></td>
+										<td></td>
+										</table>
+									</div>
+								<input type="submit" class="btn btn-info btn-mg" title="Apply"
+									value="Apply" />
+								<p>
+								
+							</form>
+							<toaster-container
+								toaster-options="{'timeOut': 3000, 'positionClass': 'toast-bottom-right'}"></toaster-container>
+						</div>
+					</div>
+					<div class="header">
+						<h1><div style="display: inline-block;"></div>Operations</h1>
+					</div>
+					<div class="panel">
+						<div ng-file-drop ng-model="files"
+							class="drop-box ng-isolate-scope ng-valid ng-dirty"
+							drag-over-class="{accept:'dragover', reject:'dragover-err', delay:100}"
+							multiple="true" allow-dir="false">Drop Organization file to	be digested here</div>
+						<div ng-no-file-drop class="drop-box" style="display: none;">File Drop is not supported for this browser</div>
+					</div>
+					<div class="panel panel-primary">
+						<div class="panel-body" ng-init="actions.getproperties(true)">
+							<a class="btn btn-primary btn-mg panel-top-right-button"
+								ng-click="actions.refreshfrombtn()" title="Refresh">Next auto refresh in <timer id="countdowntimer" interval="1000" countdown="50" finish-callback="actions.autorefresh();">{{countdown}}</timer> seconds<span
+								class="glyphicon glyphicon-refresh" style="padding:0px 0px 0px 20px;"></span></a>
+							<div ng-show="history.length > 0">
+								<table class="table table-striped">
+									<thead>
+										<tr>
+											<th>Timestamp</th>
+											<th>Action</th>
+											<th>Result</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr ng-repeat="action in history">
+											<td>{{action.timestamp}}</td>
+											<td>{{action.name}}</td>
+											<td>{{action.status}}</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+							<h4 ng-hide="history.length > 0">No trace for the moment.</h4>
+						</div>
+					</div>
+				</div> <!-- end controler -->
+				
+				<div ng-controller="ExamplesController as example">
+					<div class="header">
+						<h1><div style="display: inline-block;"></div>Examples</h1>
+					</div>
+					<div> <a href="" ng-click="example.showexample( ! example.isshowexample )">Show</a></div>					
+					
+					<div id="showDifferentExamples" ng-show="example.isshowexample" >
+						<h3>Csv file:</h3>
+						This is the format of the CSV file you gave. This is a multiple CSV header : each line started by HEADER define the different 
+						header. Then, the content is a set of line. The first CSV parameter is the type of the line (ROLE for example), and then the definition 
+						follow the line define in the HEADER;ROLE definition.
+						<div id="exampleCsv" style="border-width:2px;border-style:ridge;border-color:blue;word-wrap: break-word;">
+	HEADER;ROLE;RoleName;RoleDescription;RoleDisplayName;RoleIconName;RoleIconPath<br>
+	HEADER;USER;UserName;UserPassword;UserEnable;UserFirstName; UserLastName;UserIconName;UserIconPath;UserTitle;UserJobTitle;UserManagerUserName;PROContactAddress;PROContactBuilding;PROContactCity;PROContactCountry;PROContactEmail;PROContactFaxNumber;PROContactMobileNumber;PROContactPhoneNumber;PROContactRoom;PROContactState;PROContactWebsite;PROContactZipCode;PERContactAddress;PERContactBuilding;PERContactCity;PERContactCountry;PERContactEmail;PERContactFaxNumber;PERContactMobileNumber;PERContactPhoneNumber;PERContactRoom;PERContactState;PERContactWebsite; PERContactZipCode<<br>
+	HEADER;GROUP;GroupName;GroupDescription;GroupDisplayName;GroupIconName;GroupIconPath;GroupParentPath<br>
+	HEADER;MEMBERSHIP;UserName;RoleName;GroupPath<br>
+	HEARDER;PROFILE;ProfileName;ProfileDescription<br>
+	HEARDER;PROFILEMEMBER;ProfileName;UserName;RoleName;GroupPath<br>
+	# data now<br>
+	# ------------- user<br>
+	USER;Francis.Huster;bpm;True;Francis;Huster;Huster.gif;c:/tmp;Docteur;Artist;Walter.Bates;Gaumont;Immeuble Carmenia;Paris;France;francis.huster@gaumont.fr;FaxFaumont;06 501 501;01 501 501;Room 51;Ile de France;http://gaumont.fr/huster;75000;Rte Chambery;Charmette;Le versoud;Italie;francis.huster@laposte.net;Fax Perso;06 443 553;04 32 33 22;Room du haut;California;http://Francis.Huster;94706<br>
+	USER;Walter.Bates;bpm;True;Walter;Bates;Huster.gif;c:/tmp;Docteur;Artist;Walter.Bates;Gaumont;Immeuble Carmenia;Paris;France;francis.huster@gaumont.fr;FaxFaumont;06 501 501;01 501 501;Room 51;Ile de France;http://gaumont.fr/huster;75000;Rte Chambery;Charmette;Le versoud;Italie;francis.huster@laposte.net;Fax Perso;06 443 553;04 32 33 22;Room du haut;California;http://Francis.Huster;94706<br>
+
+						</div>					
+					
+						<br>
+						<h3>Service file:</h3>
+						1. Create a file in the directory <BONITA_HOME>/server/tenants/<TENANT>/conf/services and set this content.<br>
+						2. copy the lib included in the custom page in <TOMCAT_HOME>/webapps/bonita/WEB-INF/lib<br>
+						3. restart the server<br>
+						Then, every 20 s, the path define in the pathMonitor parameters is checked. Each file the American can understand is managed, and then move to a subpath "archive"
+						<div id="exampleCsv" style="border-width:2px;border-style:ridge;border-color:blue">
+						&lt;beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd"&gt;<br>
+	&nbsp;&lt;bean id="custompageservice" class="com.twosigma.bonitasoft.organization.service.OrganizationService" ><br>
+	&nbsp;&nbsp;	&lt;constructor-arg index="0" ref="sessionAccessor" /&gt;<br>
+	&nbsp;&nbsp;	&lt;constructor-arg index="1" name="pathMonitor" type="java.lang.String" value="C:/atelier/BPM-SP-6.4.1d/american" /&gt;<br>
+	&nbsp;&lt;/bean&gt;<br>
+<br>
+&lt;/beans&gt;<br>
+						</div>
+				    </div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
