@@ -10,19 +10,30 @@
 <!--<![endif]-->
 <head>
 <meta charset="utf-8">
-<title>BAR Digester</title>
+<title>American</title>
 <meta name="description" content="">
 <meta name="viewport" content="width=device-width">
-<link rel="stylesheet"
-	href="pageResource?page=custompage_american&location=style/animate.css" />
-<link rel="stylesheet"
-	href="pageResource?page=custompage_american&location=style/bootstrap.min.css">
-<link rel="stylesheet"
-	href="pageResource?page=custompage_american&location=style/main.css">
-<link rel="stylesheet"
-	href="pageResource?page=custompage_american&location=css/toaster.css" />
-<link rel="stylesheet"
-	href="pageResource?page=custompage_american&location=css/dropbox.css" />
+<link rel="stylesheet"	href="pageResource?page=custompage_american&location=style/animate.css" />
+<link rel="stylesheet"	href="pageResource?page=custompage_american&location=style/bootstrap.min.css">
+<link rel="stylesheet"	href="pageResource?page=custompage_american&location=style/main.css">
+<link rel="stylesheet"	href="pageResource?page=custompage_american&location=css/toaster.css" />
+<link rel="stylesheet"	href="pageResource?page=custompage_american&location=css/dropbox.css" />
+	
+<style>
+.Loading {
+	display: inline-block;
+	vertical-align: middle;
+	background-position: center;
+	background: no-repeat;
+	background-image:
+		url('data:image/gif;base64,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');
+	width: 20px;
+	height: 20px;
+	margin-top: 6px;
+	margin-right: 7px;
+}
+</style>
+
 </head>
 <body ng-app="american">
 	<!-- Third party dependencies -->
@@ -40,51 +51,29 @@
 		//flashUrl: 'yourcdn.com/js/FileAPI.flash.swf'
 		};
 	</script>
-	<script
-		src="pageResource?page=custompage_american&location=3rd-party/jquery.min.js"></script>
-
-	<script
-		src="pageResource?page=custompage_american&location=3rd-party/angular.min.js"></script>
-
-	<script
-		src="pageResource?page=custompage_american&location=3rd-party/angular-resource.min.js"></script>
-
-	<script
-		src="pageResource?page=custompage_american&location=3rd-party/angular-cookies.min.js"></script>
-
-	<script
-		src="pageResource?page=custompage_american&location=3rd-party/bootstrap/js/bootstrap.min.js"></script>
-
-	<script
-		src="pageResource?page=custompage_american&location=3rd-party/angular-bootstrap-tpls.min.js"></script>
-
-	<script
-		src="pageResource?page=custompage_american&location=3rd-party/angular-timer.js"></script>
-
-	<script
-		src="pageResource?page=custompage_american&location=js/angular-animate.min.js"></script>
-
-	<script
-		src="pageResource?page=custompage_american&location=js/toaster.js"></script>
-
-	<script
-		src="pageResource?page=custompage_american&location=american.js"></script>
-
-	<script
-		src="pageResource?page=custompage_american&location=js/angular-file-upload-shim.min.js"></script>
-
-	<script
-		src="pageResource?page=custompage_american&location=js/angular-file-upload.min.js"></script>
+	<script	src="pageResource?page=custompage_american&location=3rd-party/jquery.min.js"></script>
+	<script	src="pageResource?page=custompage_american&location=3rd-party/angular.min.js"></script>
+	<script	src="pageResource?page=custompage_american&location=3rd-party/angular-resource.min.js"></script>
+	<script	src="pageResource?page=custompage_american&location=3rd-party/angular-cookies.min.js"></script>
+	<script	src="pageResource?page=custompage_american&location=3rd-party/bootstrap/js/bootstrap.min.js"></script>
+	<script	src="pageResource?page=custompage_american&location=3rd-party/angular-bootstrap-tpls.min.js"></script>
+	<script	src="pageResource?page=custompage_american&location=3rd-party/angular-timer.js"></script>
+	<script	src="pageResource?page=custompage_american&location=js/angular-animate.min.js"></script>
+	<script	src="pageResource?page=custompage_american&location=js/toaster.js"></script>
+	<script	src="pageResource?page=custompage_american&location=american.js"></script>
+	<script	src="pageResource?page=custompage_american&location=js/angular-file-upload-shim.min.js"></script>
+	<script	src="pageResource?page=custompage_american&location=js/angular-file-upload.min.js"></script>
 		
 	<div class="bs-component"  ng-controller="MainController as mainctrl">
 
 	<center>
 	<table><tr><td><h1>American</h1></td><td rowspan="2"><img src="pageResource?page=custompage_american&location=img/american.jpg" width="150" heigth="150" /></td></tr>
-		<tr><td style="font-size:0.8em"> <a href="" ng-click="mainctrl.showhistory( ! mainctrl.isshowhistory )">V1.0</a></td></tr>
+		<tr><td style="font-size:0.8em"> <a href="" ng-click="mainctrl.showhistory( ! mainctrl.isshowhistory )">V1.2</a></td></tr>
 		<tr><td>
 		<div id="showHistory" ng-show="mainctrl.isshowhistory" style="border-width:2px;border-style:ridge;border-color:blue">
-		1.0 March 10 2015 First version<br>
-		1.1 March 17 2015 Add Profile User policy for new users
+		1.0 March 2015 First version<br>
+		1.1 March 2015 Add Profile User policy for new users
+		1.2 Sept 2017
 		</td></tr>
 		</div>
 	</table>
@@ -102,16 +91,13 @@
 <!--					<timer interval="5000" />-->
 					<div class="panel panel-primary">
 						<div class="panel-body">
-							<form name="setpropertiesform"
-								ng-submit="actions.setproperties()" novalidate>
 								<div class="form-group">
-									<label for="dropzone">Drop Zone</label> <input type="text"
-										class="form-control" id="dropzone" ng-model="dropzonenewvalue" required>
+									<label for="dropzone">Drop Zone</label> 
+									<input type="text" class="form-control" ng-model="actions.options.dropzone" required>
 								</div>
 								<div class="form-group">
-									<label for="archivezone">Archive Zone</label> <input
-										type="text" class="form-control" id="archivezone"
-										ng-model="archivezonenewvalue" required>
+									<label for="archivezone">Archive Zone</label> 
+									<input type="text" class="form-control"	ng-model="actions.options.archivezone" required>
 								</div>
 								<div class="form-group">
 									<label for="archivezone">Options</label> 
@@ -119,7 +105,7 @@
 									<tr>
 										<td style="padding-right: 40px">
 											Group
-											<select class="form-control" ng-model="optoperationgroups" >
+											<select class="form-control" ng-model="actions.options.groups" >
 												<option value="BOTH" >Insert/Update</option>
 												<option value="INSERTONLY">Insert only</option>										  
 												<option value="UPDATEONLY">Update only</option>										  
@@ -128,7 +114,7 @@
 										</td>
 										<td style="padding-right: 40px">
 											Roles
-											<select class="form-control" ng-model="optoperationroles" >
+											<select class="form-control" ng-model="actions.options.roles" >
 												<option value="BOTH" >Insert/Update</option>
 												<option value="INSERTONLY">Insert only</option>										  
 												<option value="UPDATEONLY">Update only</option>										  
@@ -137,7 +123,7 @@
 										</td>
 										<td style="padding-right: 40px">
 											Users
-											<select class="form-control" ng-model="optoperationusers" >
+											<select class="form-control" ng-model="actions.options.users" >
 												<option value="BOTH" >Insert/Update</option>
 												<option value="INSERTONLY">Insert only</option>										  
 												<option value="UPDATEONLY">Update only</option>										  
@@ -146,7 +132,7 @@
 										</td>
 										<td style="padding-right: 40px">
 											Profiles
-											<select class="form-control" ng-model="optoperationprofiles" >
+											<select class="form-control" ng-model="actions.options.profiles" >
 												<option value="BOTH" >Insert/Update</option>
 												<option value="INSERTONLY">Insert only</option>										  
 												<option value="UPDATEONLY">Update only</option>										  
@@ -155,7 +141,7 @@
 										</td>
 										<td style="padding-right: 40px">
 											Profiles members
-											<select class="form-control" ng-model="optoperationprofilemembers" >
+											<select class="form-control" ng-model="actions.options.profilemembers" >
 												<option value="BOTH" >Insert/Update</option>
 												<option value="INSERTONLY">Insert only</option>										  
 												<option value="UPDATEONLY">Update only</option>										  
@@ -165,19 +151,19 @@
 										</tr><tr>
 										<td>
 											Purge Groups
-											<input type="checkbox"  id="purgeUser" ng-model="optpurgegroups" title="If checked, all groups which are not in the source are deleted"/>	
+											<input type="checkbox"  ng-model="actions.options.purgegroups" title="If checked, all groups which are not in the source are deleted"/>	
 										</td>
 										<td>
 											Purge Roles                                     
-											<input type="checkbox"  id="purgeUser" ng-model="optpurgeroles" title="If checked, all Roles which are not in the source are deleted"/>	
+											<input type="checkbox"  ng-model="actions.options.purgeroles" title="If checked, all Roles which are not in the source are deleted"/>	
 										</td>
 										<td>
 											Purge Users
-											<input type="checkbox"  id="purgeUser" ng-model="optpurgeusers" title="If checked, all users which are not in the source are deleted"/>	
+											<input type="checkbox"  ng-model="actions.options.purgeusers" title="If checked, all users which are not in the source are deleted"/>	
 										</td>
 										<td>
 											Purge Profiles
-											<input type="checkbox"  id="purgeUser" ng-model="optpurgeprofiles" title="If checked, all profiles (except the systems one ; User, Administrator, Process Manager) which are not in the source are deleted"/>	
+											<input type="checkbox" ng-model="actions.options.purgeprofiles" title="If checked, all profiles (except the systems one ; User, Administrator, Process Manager) which are not in the source are deleted"/>	
 										</td>										
 										</tr>
 										<tr>
@@ -185,7 +171,7 @@
 										<td></td>
 										<td>
 											New Users and Profile 'User':
-											<select class="form-control" ng-model="optregisternewuserinprofileuser" title="For each new users, apply the procedure. If Always Insert, the new user is registered<br>If only empty, the user is registered only if he don't have any profile" >
+											<select class="form-control" ng-model="actions.options.registernewuserinprofileuser" title="For each new users, apply the procedure. If Always Insert, the new user is registered<br>If only empty, the user is registered only if he don't have any profile" >
 												<option value="NONE" >No operation</option>
 												<option value="ALWAYSUSERPROFILE">Always insert</option>										  
 												<option value="USERPROFILEIFNOTREGISTER">Insert in the profile only if empty</option>										  
@@ -195,11 +181,20 @@
 										<td></td>
 										</table>
 									</div>
-								<input type="submit" class="btn btn-info btn-mg" title="Apply"
-									value="Apply" />
+								<table>
+								<tr><td>
+										<div ng-show="actions.wait">
+											<span class="Loading">.</span>
+										</div>
+									</td>
+									<td>
+										<button class="btn btn-info" ng-click="actions.setproperties()" ng-disabled="actions.wait">Apply</button>
+									</td>
+								</tr>
+								</table>
 								<p>
 								
-							</form>
+							
 							<toaster-container
 								toaster-options="{'timeOut': 3000, 'positionClass': 'toast-bottom-right'}"></toaster-container>
 						</div>
@@ -214,11 +209,39 @@
 							multiple="true" allow-dir="false">Drop Organization file to	be digested here</div>
 						<div ng-no-file-drop class="drop-box" style="display: none;">File Drop is not supported for this browser</div>
 					</div>
+
 					<div class="panel panel-primary">
+					 
 						<div class="panel-body" ng-init="actions.getproperties(true)">
-							<a class="btn btn-primary btn-mg panel-top-right-button"
-								ng-click="actions.refreshfrombtn()" title="Refresh">Next auto refresh in <timer id="countdowntimer" interval="1000" countdown="50" finish-callback="actions.autorefresh();">{{countdown}}</timer> seconds<span
-								class="glyphicon glyphicon-refresh" style="padding:0px 0px 0px 20px;"></span></a>
+							<table>
+							<tr>
+								<td colspan="2">
+									<input type="checkbox" ng-model="actions.options.autorefresh" ng-change="actions.clickautorefresh()" >Automatic refresh<p>
+								</td>
+							</tr>
+							<tr ng-show=" ! actions.options.autorefresh">
+								<td>
+									<div ng-show="actions.refreshisrunning">
+										<span class="Loading">.</span>
+									</div>
+								</td><td>
+					 				<button ng-click="actions.refreshfrombtn()">Refresh</button>
+					 			</td>
+					 		</tr>
+												
+							<tr ng-show="actions.options.autorefresh">
+								<td>
+									<div ng-show="actions.refreshisrunning">
+										<span class="Loading">.</span>
+									</div>
+								</td><td>
+									<a class="btn btn-primary btn-mg panel-top-right-button"
+										ng-click="actions.refreshfrombtn()" title="Refresh">Next auto refresh in 
+											<timer id="countdowntimer" interval="1000" countdown="50" finish-callback="actions.autorefresh();">{{countdown}}</timer> seconds
+											<span class="glyphicon glyphicon-refresh" style="padding:0px 0px 0px 20px;"></span></a>
+								</td>
+							</tr>
+							</table>
 							<div ng-show="history.length > 0">
 								<table class="table table-striped">
 									<thead>
@@ -266,22 +289,8 @@
 	USER;Walter.Bates;bpm;True;Walter;Bates;Huster.gif;c:/tmp;Docteur;Artist;Walter.Bates;Gaumont;Immeuble Carmenia;Paris;France;francis.huster@gaumont.fr;FaxFaumont;06 501 501;01 501 501;Room 51;Ile de France;http://gaumont.fr/huster;75000;Rte Chambery;Charmette;Le versoud;Italie;francis.huster@laposte.net;Fax Perso;06 443 553;04 32 33 22;Room du haut;California;http://Francis.Huster;94706<br>
 
 						</div>					
-					
-						<br>
-						<h3>Service file:</h3>
-						1. Create a file in the directory <BONITA_HOME>/server/tenants/<TENANT>/conf/services and set this content.<br>
-						2. copy the lib included in the custom page in <TOMCAT_HOME>/webapps/bonita/WEB-INF/lib<br>
-						3. restart the server<br>
-						Then, every 20 s, the path define in the pathMonitor parameters is checked. Each file the American can understand is managed, and then move to a subpath "archive"
-						<div id="exampleCsv" style="border-width:2px;border-style:ridge;border-color:blue">
-						&lt;beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd"&gt;<br>
-	&nbsp;&lt;bean id="custompageservice" class="com.twosigma.bonitasoft.organization.service.OrganizationService" ><br>
-	&nbsp;&nbsp;	&lt;constructor-arg index="0" ref="sessionAccessor" /&gt;<br>
-	&nbsp;&nbsp;	&lt;constructor-arg index="1" name="pathMonitor" type="java.lang.String" value="C:/atelier/BPM-SP-6.4.1d/american" /&gt;<br>
-	&nbsp;&lt;/bean&gt;<br>
-<br>
-&lt;/beans&gt;<br>
-						</div>
+						
+						
 				    </div>
 				</div>
 			</div>

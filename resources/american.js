@@ -20,23 +20,9 @@
 //	User app list controller
 	appCommand.controller('DigesterController', function($rootScope, $scope, $upload, $http, toaster) {
 		var me = this;
-		$scope.dropzonenewvalue = "";
-		$scope.archivezonenewvalue = "";
-
-		$scope.optoperationgroups="BOTH"
-		$scope.optoperationroles="BOTH"
-		$scope.optoperationusers="BOTH"
-		$scope.optoperationprofiles="BOTH";
-		$scope.optoperationprofilemembers="BOTH";
-
-		$scope.optpurgegroups=false;
-		$scope.optpurgegroles=false;
-		$scope.optpurgeusers=false;
-		$scope.optpurgeprofiles=false;
-		$scope.optregisternewuserinprofileuser="ALWAYSUSERPROFILE";
 		
 		$scope.currentUploadFileIndex = 0;
-		$scope.refreshisrunning = false;
+		this.refreshisrunning = false;
 		
 		$rootScope.history = [];
 
@@ -102,24 +88,28 @@
 		
 			
 		this.refreshfrombtn = function() {
-			if(!$scope.refreshisrunning) {
-				$scope.refreshisrunning = true;
+			console.log("refreshfrombtn : already in progress?  "+this.refreshisrunning);
+			
+			if(!this.refreshisrunning) {
+				this.refreshisrunning = true;
 			
 				//flush the toasts
 				me.flushToasts();
+				var self=this;
+				self.wait=true;
 				// contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
 				// $scope.$apply();
 				
 				
-				// $http.get( '?page=custompage_american&action=refresh' )
-				//	.success( function (result) {
-					
-				
+						
+				console.log("refreshfrombtn : PLAY IT");
+
 				$.ajax({
 					method : 'GET',
 					url : '?page=custompage_american&action=refresh',			
 					contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
 					success : function (result) {
+						self.wait=false;
 						var resultArray = JSON.parse(result);
 						var arrayLength = resultArray.length;
 						for (var i = 0; i < arrayLength; i++) {
@@ -135,25 +125,56 @@
 						} else {
 							me.fullrefreshpop();
 						}
-						$scope.refreshisrunning = false;
+						me.refreshisrunning = false;
 						$scope.$apply();
 					},
 					error: function (result) {
+						self.wait=false;
 						me.errorpop();
-						$scope.refreshisrunning = false;
+						me.refreshisrunning = false;
 						$scope.$apply();
 					},
 					complete: function () {
-						$scope.refreshisrunning = false;
+						self.wait=false;
+						me.refreshisrunning = false;
 					}
 				});
 				
 			}
 		};
 
+		this.clickautorefresh = function()
+		{
+
+			console.log("clickautorefresh : now it's "+this.options.autorefresh);
+
+			if (this.options.autorefresh)
+			{
+				// REarm the timer
+				console.log("clickautorefresh : ARM Timer");
+				document.getElementsByTagName('timer')[0].start();
+			}
+			else
+			{
+				console.log("clickautorefresh : STOP Timer");
+				document.getElementsByTagName('timer')[0].stop();
+				
+			}
+		}
 		this.autorefresh = function() {
-			if(!$scope.refreshisrunning) {
-				$scope.refreshisrunning = true;
+			
+			console.log("autorefresh : "+this.options.autorefresh);
+			if (this.options.autorefresh===false)
+			{
+				console.log("autorefresh : No auto refresh");
+				 return;
+			}
+			console.log("autorefresh : PLAY IT");
+
+			
+			if(!this.refreshisrunning) {
+				this.refreshisrunning = true;
+				var me=this;
 				$.ajax({
 					method : 'GET',
 					url : '?page=custompage_american&action=refresh',			
@@ -182,75 +203,92 @@
 						// $scope.$apply();
 					},
 					complete: function () {
+						// REarm the timer
 						document.getElementsByTagName('timer')[0].addCDSeconds(60);
-						$scope.refreshisrunning = false;
+						me.refreshisrunning = false;
 					}
 				});
 			} else {
 				document.getElementsByTagName('timer')[0].addCDSeconds(60);
 			}
 		};
+		
+		/* Properties */
+		var options={ "dropzone":"", "archivezone":"","groups":"BOTH","roles":"BOTH","users":"BOTH","profiles":"BOTH",
+				"profilemembers":"BOTH",
+				"purgegroups":false,
+				"purgegroles":false,
+				"purgeusers":false,
+				"purgeprofiles":false,
+				"registernewuserinprofileuser":"ALWAYSUSERPROFILE",
+				"autorefresh":true};
+		
 
 		this.getproperties = function(toast) {
-			$.ajax({
-				method : 'GET',
-				url : '?page=custompage_american&action=getproperties',			
-				contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
-				success : function (result) {
-					var resultArray = JSON.parse(result);
-					$scope.dropzonenewvalue 		= resultArray.dropzone;
-					$scope.archivezonenewvalue 		= resultArray.archivezone;
-					$scope.optoperationgroups		= (resultArray.optoperationgroups==null ? "BOTH": resultArray.optoperationgroups);
-					$scope.optoperationroles		= (resultArray.optoperationroles==null ? "BOTH": resultArray.optoperationroles);
-					$scope.optoperationusers		= (resultArray.optoperationusers==null ? "BOTH": resultArray.optoperationusers);
-					$scope.optoperationprofiles		= (resultArray.optoperationprofiles==null ? "BOTH": resultArray.optoperationprofiles);
-					$scope.optoperationprofilemembers		= (resultArray.optoperationprofilemembers==null ? "BOTH": resultArray.optoperationprofilemembers);
-					// optoperationmemberships
-					$scope.optpurgegroups			= (resultArray.optpurgegroups== "true" ? true : false);
-					$scope.optpurgeroles			= (resultArray.optpurgeroles=="true" ? true : false);
-					$scope.optpurgeusers			= (resultArray.optpurgeusers =="true" ? true :false);
-					$scope.optregisternewuserinprofileuser = (resultArray.optregisternewuserinprofileuser==null ? "USERPROFILEIFNOTREGISTER": resultArray.optregisternewuserinprofileuser);
-					
-					$scope.optpurgeprofiles			= (resultArray.optpurgeprofiles =="true" ? true :false);
-		
-					if(toast) {
-						me.proloadpop();
-					}
-					// $scope.$apply();
-				},
-				error: function (result) {
-					me.errorpop();
-					// $scope.$apply();
-				}
-			});
+			var self=this;
+			self.wait=true;
+			$http.get( '?page=custompage_american&action=getproperties' )
+					.success( function ( result ) {
+						self.wait=false;
+						
+						self.options= result;
+						if (!self.options)
+							self.options={};
+						if (typeof self.options.autorefresh === "undefined")
+							self.options.autorefresh=true;
+						self.options.autorefresh 	= self.stringToBoolean( self.options.autorefresh);
+						self.options.purgegroups 	= self.stringToBoolean( self.options.purgegroups);
+						self.options.purgeroles 	= self.stringToBoolean( self.options.purgeroles);
+						self.options.purgeusers 	= self.stringToBoolean( self.options.purgeusers);
+						self.options.purgeprofiles 	= self.stringToBoolean( self.options.purgeprofiles);
+								/*
+								==="true")
+							self.options.autorefresh=true;
+						else
+							self.options.autorefresh=false;
+						if (self.options.purgegroups ==="true")
+							self.options.purgegroups=true;
+						else
+							self.options.purgegroups=false;
+						*/
+							
+						if(toast) {
+							me.proloadpop();
+						}
+					})
+					.error( function ( jsonResult ) {
+						self.wait=false;
+						me.errorpop();
+						});
+			
+			
+			
 		};
 
+		this.stringToBoolean = function( valueSt)
+		{
+			if (valueSt ==="true")
+				return true;
+			return false;
+		}
+
 		this.setproperties = function() {
+			var self=this;
+			self.wait=true;
+
 			//flush the toasts
 			me.flushToasts();
-			// $scope.$apply();
-			var url = '?page=custompage_american&action=setproperties&dropzone=' + $scope.dropzonenewvalue + '&archivezone=' + $scope.archivezonenewvalue;
-				url = url + "&optoperationgroups="+ $scope.optoperationgroups;
-				url = url + "&optoperationroles=" + $scope.optoperationroles;
-				url = url + "&optoperationusers=" + $scope.optoperationusers;
-				url = url + "&optoperationprofiles=" + $scope.optoperationprofiles;
-				url = url + "&optoperationprofilememberss=" + $scope.optoperationprofilemembers;
-				url = url + "&optpurgegroups=" + $scope.optpurgegroups;
-				url = url + "&optpurgeroles=" + $scope.optpurgeroles;
-				url = url + "&optpurgeusers=" +	$scope.optpurgeusers;
-				url = url + "&optpurgeprofiles=" +	$scope.optpurgeprofiles;
-				url = url + "&optregisternewuserinprofileuser=" + $scope.optregisternewuserinprofileuser;
-				
-
-			$.ajax({
-				method : 'GET',
-				url : url,			
-				contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
-				success : function (result) {
-					if(result != "[{}]") {
+			
+			
+			var json = encodeURI( angular.toJson( this.options, false));
+			
+			$http.get( '?page=custompage_american&action=setproperties&paramjson='+json )
+				.success( function ( jsonResult ) {
+					self.wait=false;
+					
 						var dropzoneerror = false;
 						var archivezoneerror = false;
-						var resultArray = JSON.parse(result);
+						var resultArray = jsonResult;
 
 						$rootScope.history.unshift( resultArray.history );
 						if (resultArray.errordropzone != "")
@@ -278,17 +316,13 @@
 							me.propop();
 							// $scope.$apply();
 						}
-					} else {
-						me.sameloadpop();
-						// $scope.$apply();
-					}
+					
 					//me.getproperties(false);
-				},
-				error: function (result) {
+				})
+				.error( function ( jsonResult ) {
+					self.wait=false;
 					me.errorpop();
-					// $scope.$apply();
-				}
-			});
+				});
 		};
 
 		//$scope.$on('timer-tick', function (event, args) {
@@ -338,7 +372,7 @@
 							// $scope.$apply();
 						}
 					});
-				});
+				}).error(function() {} );
 			}
 		});
 	});
