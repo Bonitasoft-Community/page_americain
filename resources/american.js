@@ -20,23 +20,9 @@
 //	User app list controller
 	appCommand.controller('DigesterController', function($rootScope, $scope, $upload, $http, toaster) {
 		var me = this;
-		$scope.dropzonenewvalue = "";
-		$scope.archivezonenewvalue = "";
-
-		$scope.optoperationgroups="BOTH"
-		$scope.optoperationroles="BOTH"
-		$scope.optoperationusers="BOTH"
-		$scope.optoperationprofiles="BOTH";
-		$scope.optoperationprofilemembers="BOTH";
-
-		$scope.optpurgegroups=false;
-		$scope.optpurgegroles=false;
-		$scope.optpurgeusers=false;
-		$scope.optpurgeprofiles=false;
-		$scope.optregisternewuserinprofileuser="ALWAYSUSERPROFILE";
 		
-		$scope.currentUploadFileIndex = 0;
-		$scope.refreshisrunning = false;
+		this.currentUploadFileIndex = 0;
+		this.refreshisrunning = false;
 		
 		$rootScope.history = [];
 
@@ -85,7 +71,7 @@
 		};
 		
 		this.uploadsuccesspop = function() {
-			toaster.pop('success', "A BAR file has been uploaded", "");
+			toaster.pop('success', "A file has been uploaded", "");
 		};
 
 		this.uploadwarningpop = function() {
@@ -102,24 +88,28 @@
 		
 			
 		this.refreshfrombtn = function() {
-			if(!$scope.refreshisrunning) {
-				$scope.refreshisrunning = true;
+			console.log("refreshfrombtn : already in progress?  "+this.refreshisrunning);
+			
+			if(!this.refreshisrunning) {
+				this.refreshisrunning = true;
 			
 				//flush the toasts
 				me.flushToasts();
+				var self=this;
+				self.wait=true;
 				// contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
 				// $scope.$apply();
 				
 				
-				// $http.get( '?page=custompage_american&action=refresh' )
-				//	.success( function (result) {
-					
-				
+						
+				console.log("refreshfrombtn : PLAY IT");
+
 				$.ajax({
 					method : 'GET',
 					url : '?page=custompage_american&action=refresh',			
 					contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
 					success : function (result) {
+						self.wait=false;
 						var resultArray = JSON.parse(result);
 						var arrayLength = resultArray.length;
 						for (var i = 0; i < arrayLength; i++) {
@@ -135,25 +125,56 @@
 						} else {
 							me.fullrefreshpop();
 						}
-						$scope.refreshisrunning = false;
+						me.refreshisrunning = false;
 						$scope.$apply();
 					},
 					error: function (result) {
+						self.wait=false;
 						me.errorpop();
-						$scope.refreshisrunning = false;
+						me.refreshisrunning = false;
 						$scope.$apply();
 					},
 					complete: function () {
-						$scope.refreshisrunning = false;
+						self.wait=false;
+						me.refreshisrunning = false;
 					}
 				});
 				
 			}
 		};
 
+		this.clickautorefresh = function()
+		{
+
+			console.log("clickautorefresh : now it's "+this.options.autorefresh);
+
+			if (this.options.autorefresh)
+			{
+				// REarm the timer
+				console.log("clickautorefresh : ARM Timer");
+				document.getElementsByTagName('timer')[0].start();
+			}
+			else
+			{
+				console.log("clickautorefresh : STOP Timer");
+				document.getElementsByTagName('timer')[0].stop();
+				
+			}
+		}
 		this.autorefresh = function() {
-			if(!$scope.refreshisrunning) {
-				$scope.refreshisrunning = true;
+			
+			console.log("autorefresh : "+this.options.autorefresh);
+			if (this.options.autorefresh===false)
+			{
+				console.log("autorefresh : No auto refresh");
+				 return;
+			}
+			console.log("autorefresh : PLAY IT");
+
+			
+			if(!this.refreshisrunning) {
+				this.refreshisrunning = true;
+				var me=this;
 				$.ajax({
 					method : 'GET',
 					url : '?page=custompage_american&action=refresh',			
@@ -182,75 +203,92 @@
 						// $scope.$apply();
 					},
 					complete: function () {
+						// REarm the timer
 						document.getElementsByTagName('timer')[0].addCDSeconds(60);
-						$scope.refreshisrunning = false;
+						me.refreshisrunning = false;
 					}
 				});
 			} else {
 				document.getElementsByTagName('timer')[0].addCDSeconds(60);
 			}
 		};
+		
+		/* Properties */
+		var options={ "dropzone":"", "archivezone":"","groups":"BOTH","roles":"BOTH","users":"BOTH","profiles":"BOTH",
+				"profilemembers":"BOTH",
+				"purgegroups":false,
+				"purgegroles":false,
+				"purgeusers":false,
+				"purgeprofiles":false,
+				"registernewuserinprofileuser":"ALWAYSUSERPROFILE",
+				"autorefresh":true};
+		
 
 		this.getproperties = function(toast) {
-			$.ajax({
-				method : 'GET',
-				url : '?page=custompage_american&action=getproperties',			
-				contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
-				success : function (result) {
-					var resultArray = JSON.parse(result);
-					$scope.dropzonenewvalue 		= resultArray.dropzone;
-					$scope.archivezonenewvalue 		= resultArray.archivezone;
-					$scope.optoperationgroups		= (resultArray.optoperationgroups==null ? "BOTH": resultArray.optoperationgroups);
-					$scope.optoperationroles		= (resultArray.optoperationroles==null ? "BOTH": resultArray.optoperationroles);
-					$scope.optoperationusers		= (resultArray.optoperationusers==null ? "BOTH": resultArray.optoperationusers);
-					$scope.optoperationprofiles		= (resultArray.optoperationprofiles==null ? "BOTH": resultArray.optoperationprofiles);
-					$scope.optoperationprofilemembers		= (resultArray.optoperationprofilemembers==null ? "BOTH": resultArray.optoperationprofilemembers);
-					// optoperationmemberships
-					$scope.optpurgegroups			= (resultArray.optpurgegroups== "true" ? true : false);
-					$scope.optpurgeroles			= (resultArray.optpurgeroles=="true" ? true : false);
-					$scope.optpurgeusers			= (resultArray.optpurgeusers =="true" ? true :false);
-					$scope.optregisternewuserinprofileuser = (resultArray.optregisternewuserinprofileuser==null ? "USERPROFILEIFNOTREGISTER": resultArray.optregisternewuserinprofileuser);
-					
-					$scope.optpurgeprofiles			= (resultArray.optpurgeprofiles =="true" ? true :false);
-		
-					if(toast) {
-						me.proloadpop();
-					}
-					// $scope.$apply();
-				},
-				error: function (result) {
-					me.errorpop();
-					// $scope.$apply();
-				}
-			});
+			var self=this;
+			self.wait=true;
+			$http.get( '?page=custompage_american&action=getproperties' )
+					.success( function ( result ) {
+						self.wait=false;
+						
+						self.options= result;
+						if (!self.options)
+							self.options={};
+						if (typeof self.options.autorefresh === "undefined")
+							self.options.autorefresh=true;
+						self.options.autorefresh 	= self.stringToBoolean( self.options.autorefresh);
+						self.options.purgegroups 	= self.stringToBoolean( self.options.purgegroups);
+						self.options.purgeroles 	= self.stringToBoolean( self.options.purgeroles);
+						self.options.purgeusers 	= self.stringToBoolean( self.options.purgeusers);
+						self.options.purgeprofiles 	= self.stringToBoolean( self.options.purgeprofiles);
+								/*
+								==="true")
+							self.options.autorefresh=true;
+						else
+							self.options.autorefresh=false;
+						if (self.options.purgegroups ==="true")
+							self.options.purgegroups=true;
+						else
+							self.options.purgegroups=false;
+						*/
+							
+						if(toast) {
+							me.proloadpop();
+						}
+					})
+					.error( function ( jsonResult ) {
+						self.wait=false;
+						me.errorpop();
+						});
+			
+			
+			
 		};
 
+		this.stringToBoolean = function( valueSt)
+		{
+			if (valueSt ==="true")
+				return true;
+			return false;
+		}
+
 		this.setproperties = function() {
+			var self=this;
+			self.wait=true;
+
 			//flush the toasts
 			me.flushToasts();
-			// $scope.$apply();
-			var url = '?page=custompage_american&action=setproperties&dropzone=' + $scope.dropzonenewvalue + '&archivezone=' + $scope.archivezonenewvalue;
-				url = url + "&optoperationgroups="+ $scope.optoperationgroups;
-				url = url + "&optoperationroles=" + $scope.optoperationroles;
-				url = url + "&optoperationusers=" + $scope.optoperationusers;
-				url = url + "&optoperationprofiles=" + $scope.optoperationprofiles;
-				url = url + "&optoperationprofilememberss=" + $scope.optoperationprofilemembers;
-				url = url + "&optpurgegroups=" + $scope.optpurgegroups;
-				url = url + "&optpurgeroles=" + $scope.optpurgeroles;
-				url = url + "&optpurgeusers=" +	$scope.optpurgeusers;
-				url = url + "&optpurgeprofiles=" +	$scope.optpurgeprofiles;
-				url = url + "&optregisternewuserinprofileuser=" + $scope.optregisternewuserinprofileuser;
-				
-
-			$.ajax({
-				method : 'GET',
-				url : url,			
-				contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
-				success : function (result) {
-					if(result != "[{}]") {
+			
+			
+			var json = encodeURI( angular.toJson( this.options, false));
+			
+			$http.get( '?page=custompage_american&action=setproperties&paramjson='+json )
+				.success( function ( jsonResult ) {
+					self.wait=false;
+					
 						var dropzoneerror = false;
 						var archivezoneerror = false;
-						var resultArray = JSON.parse(result);
+						var resultArray = jsonResult;
 
 						$rootScope.history.unshift( resultArray.history );
 						if (resultArray.errordropzone != "")
@@ -278,25 +316,77 @@
 							me.propop();
 							// $scope.$apply();
 						}
-					} else {
-						me.sameloadpop();
-						// $scope.$apply();
-					}
+					
 					//me.getproperties(false);
-				},
-				error: function (result) {
+				})
+				.error( function ( jsonResult ) {
+					self.wait=false;
 					me.errorpop();
-					// $scope.$apply();
-				}
-			});
+				});
 		};
 
-		//$scope.$on('timer-tick', function (event, args) {
-			//me.autorefresh();
-		//});
 		
+		var meForUpload = this;
+		this.savetoaster= toaster;
+		$scope.$watch('files', function() {
+			meForUpload.currentUploadFileIndex = 0;
+			meForUpload.loadmessage="";
+			for (var i = 0; i < $scope.files.length; i++) {
+				var file = $scope.files[i];
+				meForUpload.loadmessage="Upload ["+file.name+"] ...";
+				meForUpload.savetoaster.pop('success', "Start upload ["+file.name+"]", "");
+				this.upload = $upload.upload({
+					url: 'fileUpload',
+					method: 'POST',
+					data: {myObj: this.myModelObj},
+					file: file
+				}).progress(function(evt) {
+//					console.log('progress: ' + parseInt(100.0 * evt.loaded / evt.total) + '% file :'+ evt.config.file.name);
+				}).success(function(data, status, headers, config) {
+					console.log('file ' + config.file.name + 'is uploaded successfully. Response: ' + data);
+					var url='?page=custompage_american&action=uploadbar&file=' + data;
+					url = url + '&name=' + $scope.files[meForUpload.currentUploadFileIndex].name;
+					meForUpload.currentUploadFileIndex = meForUpload.currentUploadFileIndex + 1;
+					$.ajax({
+						method : 'GET',
+						url : url,
+						contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+						success : function (result) {
+							console.log('file ' + config.file.name + 'is given to american monitor. Response: ' + result);
+							var resultArray = JSON.parse(result)
+							var arrayLength = resultArray.length;
+							console.log('arrayLength= ' + arrayLength );
+							for (var i = 0; i < arrayLength; i++) {
+								$rootScope.history.unshift(resultArray[i]);
+								if(resultArray[i].status.toString().startsWith("Error: ")) {
+									meForUpload.loadmessage="File ["+config.file.name+"] loaded with error";
+									meForUpload.savetoaster.pop('warning', "the file ["+config.file.name+"] has been avoided due to error", "");
+								} else {
+									meForUpload.loadmessage="File ["+config.file.name+"] loaded";
+									// toaster.pop('success', "the file ["+config.file.name+"] has been uploaded_2", "");
+									meForUpload.savetoaster.pop('success', "the file ["+config.file.name+"] has been uploaded", "");
+								}
+							}
+							// $scope.$apply();
+						},
+						error: function ( result ) {
+							var resultArray = JSON.parse(result)
+							var arrayLength = resultArray.length;
+							for (var i = 0; i < arrayLength; i++) {
+								$rootScope.history.unshift(resultArray[i]);
+							}
+							meForUpload.loadmessage="File ["+config.file.name+"] loaded with error";
+							meForUpload.savetoaster.pop('error', "An error occurred uploading a file ["+config.file.name+"] in the monitor directory", "");
+							// $scope.$apply();
+						}
+					});
+				}).error(function() {} );
+			}
+		});
+		/*
 		$scope.$watch('files', function() {
 			$scope.currentUploadFileIndex = 0;
+			var me=this;
 			for (var i = 0; i < $scope.files.length; i++) {
 				var file = $scope.files[i];
 				$scope.upload = $upload.upload({
@@ -338,9 +428,10 @@
 							// $scope.$apply();
 						}
 					});
-				});
+				}).error(function() {} );
 			}
 		});
+		*/
 	});
 	
 	

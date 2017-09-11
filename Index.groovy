@@ -37,35 +37,38 @@ import org.bonitasoft.engine.api.TenantAPIAccessor;
 import org.bonitasoft.engine.bpm.process.ProcessDefinition;
 import org.bonitasoft.engine.bpm.process.ProcessDefinitionNotFoundException;
 
+/* we want to create profile, so only the subscription can do that
+ * */
+ 
 import com.bonitasoft.engine.api.ProfileAPI;
 import com.bonitasoft.engine.api.TenantAPIAccessor;
+
 import org.bonitasoft.engine.session.APISession;
 import org.bonitasoft.engine.api.CommandAPI;
 import org.bonitasoft.engine.command.CommandDescriptor;
 import org.bonitasoft.engine.command.CommandCriterion;
-import org.codehaus.groovy.tools.shell.CommandAlias;
+
+
+import org.bonitasoft.log.event.BEvent;
+import org.bonitasoft.log.event.BEventFactory;
+import org.bonitasoft.log.event.BEvent.Level;
 
 
 import com.bonitasoft.organization.ParametersOperation;
 import com.bonitasoft.organization.OrganizationIntSource;
-import com.bonitasoft.organization.OrganizationAccess;
+import com.bonitasoft.organization.OrganizationAPI;
+import com.bonitasoft.organization.OrganizationAPI.Configuration;
+
 import com.bonitasoft.organization.csv.impl.OrganizationSourceCSV;
 import com.bonitasoft.organization.OrganizationLog;
 import com.bonitasoft.organization.Item;
 import com.bonitasoft.organization.Item.StatisticOnItem;
   
 public class Index implements PageController {
-    static private final String defaultDropzone = ".";
-    static private final String defaultArchivezone = defaultDropzone + "/archive";
-    static private final String dropzoneProperty = "dropzone";
-     static private final String archivezoneProperty = "archivezone";
-    
+      
 	
 
 
-	/**	at each call, BOS create a new Groovy script, who create this variable again (static is not real) */
-    static private String dropzone = defaultDropzone;
-    static private String archivezone = defaultArchivezone;
 
 	private HashMap<String,String> optionParametersOperation = new HashMap<String,String>();
 	
@@ -88,109 +91,86 @@ public class Index implements PageController {
                 return;
             }
 
+        	String paramJsonEncode= request.getParameter("paramjson");
+            String paramJsonSt = (paramJsonEncode==null ? null : java.net.URLDecoder.decode(paramJsonEncode, "UTF-8"));
+
+            
+            
+			APISession apiSession = pageContext.getApiSession()
+			IdentityAPI identityApi = TenantAPIAccessor.getIdentityAPI(apiSession);
+			ProfileAPI profileApi = TenantAPIAccessor.getProfileAPI(apiSession);
+
+			OrganizationAPI organizationAPI = new OrganizationAPI( identityApi, profileApi );
+
+			
             ArrayList<HashMap<String, Object>> actions = new ArrayList<HashMap<String, Object>>();
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
             if("getproperties".equals(action)) {
 			
                 logger.info("################  American getProperties");
 
-				readProperties(pageResourceProvider);
-
-				logger.info(" GetProperties: Set Properties Map");
-
-                HashMap<String, Object> propertiesMap = new HashMap<String, Object>();
-                propertiesMap.put("dropzone", dropzone);
-				propertiesMap.put("archivezone", archivezone);
-				propertiesMap.putAll(optionParametersOperation);
+                
+                Configuration configuration = organizationAPI.loadConfiguration(pageResourceProvider.getPageName(), apiSession.getTenantId());
 				
-				logger.info(" Get : Properties Map : ["+propertiesMap+"]");
+
+                HashMap<String, Object> propertiesMap = configuration.getMap();
+                logger.info(" Get : Properties Map : ["+propertiesMap+"]");
                
 		
 				out.write(JSONValue.toJSONString(propertiesMap));
 				logger.info(" Get Properties Map :  End Get["+JSONValue.toJSONString(propertiesMap)+"]");
-
-				
-				
 			// -------------------------------------------------------- setproperties
             } else if("setproperties".equals(action)) {
                 logger.info("################  American setProperties");
-				String dropzoneNewValue = request.getParameter(dropzoneProperty);
-				String archivezoneNewValue = request.getParameter(archivezoneProperty);
+				Configuration configuration = new Configuration();
+				configuration.setFromJson(paramJsonSt );
 
-				logger.info("American sets properties");
-					
-				Properties properties = new Properties();
 				
-				String detailStatus= "";
 				HashMap<String, Object> actionResult = new HashMap<String, Object>();
 				actionResult.put("name", "Set properties");
 				actionResult.put("timestamp", dateFormat.format(new Date()));
-				if (dropzoneNewValue == null  || dropzoneNewValue.isEmpty()) {
-					actionResult.put("errordropzone", "No new value found, it will set to: \"" + (new File(defaultDropzone)).getCanonicalPath() + "\"");
-					properties.setProperty(dropzoneProperty, defaultDropzone);
-				} else if(!(new File(dropzoneNewValue)).exists() || !(new File(dropzoneNewValue)).isDirectory()) {
-					actionResult.put("errordropzone", "New value path ["+dropzoneNewValue+"] is not valid, it will set to: \"" + (new File(defaultDropzone)).getCanonicalPath() + "\"");
-					properties.setProperty(dropzoneProperty, defaultDropzone);
+			
+				
+				logger.info("American sets properties");
+				String defaultFilePath = (new File(".")).getCanonicalPath() ;
+				if (configuration.getDropZone().isEmpty()) {
+					actionResult.put("errordropzone", "No new value found, it will set to: [" + defaultFilePath + "]");
+					configuration.setDropZone( defaultFilePath);
+				} else if(!(new File(configuration.getDropZone())).exists() || !(new File(configuration.getDropZone())).isDirectory()) {
+					actionResult.put("errordropzone", "New value path ["+configuration.getDropZone()+"] is not valid, it will set to: \"" + defaultFilePath + "\"");
+					configuration.setDropZone(defaultFilePath);
 				} else {
 					actionResult.put("errordropzone", "");
-					properties.setProperty(dropzoneProperty, dropzoneNewValue);
 				}
-				detailStatus="Drop Zone is ["+properties.get( dropzoneProperty) +"];";
-
-				if (archivezoneNewValue == null  || archivezoneNewValue.isEmpty()) {
-					actionResult.put("errorarchivedropzone", "No new value found, it will set to: \"" + (new File(defaultArchivezone)).getCanonicalPath() + "\"");
-					properties.setProperty(archivezoneProperty, defaultArchivezone);
-				} else if(!(new File(archivezoneNewValue)).exists() || !(new File(archivezoneNewValue)).isDirectory()) {
-					String details = "";
-					if (!(new File(archivezoneNewValue)).exists())
-						details = "path is not valid";
-					if (!(new File(archivezoneNewValue)).isDirectory())
-						details = "path is not a directory";
-						actionResult.put("errorarchivedropzone", "New value path ["+archivezoneNewValue+"] is not valid : "+details+", it will set to: \"" + (new File(defaultArchivezone)).getCanonicalPath() + "\"");
-						properties.setProperty(archivezoneProperty, defaultArchivezone);
+				
+				String defaultArchiveFilePath=configuration.getDropZone()+"/archive";
+				if (configuration.getArchiveZone().isEmpty()) {
+					actionResult.put("errorarchivedropzone", "No new value found, it will set to: [" + defaultArchiveFilePath + "]");
+					configuration.setArchiveZone(defaultArchiveFilePath);
+				} else if(!(new File(configuration.getArchiveZone() )).exists() || !(new File(configuration.getArchiveZone())).isDirectory()) {
+					actionResult.put("errorarchivedropzone", "New value path ["+configuration.getArchiveZone()+"] is not valid, it will set to: \"" + defaultArchiveFilePath + "\"");
+					configuration.setArchiveZone(defaultArchiveFilePath);
 				} else {
 					actionResult.put("errorarchivedropzone", "");
-					properties.setProperty(archivezoneProperty, archivezoneNewValue);
 				}
 				
-				detailStatus +="Archive Drop Zone is ["+properties.get( archivezoneProperty) +"]";
+				
+				String detailStatus= "";
+				detailStatus="Drop Zone is ["+configuration.getDropZone() +"];";
+				detailStatus +="Archive Drop Zone is ["+configuration.archiveZone +"]";
 					
-					
-				// write all options listParametersOperation come from com.twosigma.bonitasoft.organisation.ParametersOperation
-				for (String property : com.twosigma.bonitasoft.organization.ParametersOperation.listParametersOperation)
-				{
-					String optionValue = request.getParameter(property);
-					logger.info("Properties ["+property+"] value ["+ (optionValue==null ? "IsNull":optionValue)+"]");
-					if (optionValue!=null)
-						properties.setProperty( property, "null".equals(optionValue) ? "False" : optionValue);
-				}
-	
-				logger.info("Values are set, now write it");
-				OutputStream output = null;
-				try {
-					output = new FileOutputStream(pageResourceProvider.getResourceAsFile("resources/conf/custompage.properties"));
-					properties.store(output, null);
-					actionResult.put("status", "Done");
-					dropzone = properties.getProperty(dropzoneProperty);
-					archivezone = properties.getProperty(archivezoneProperty);
+                List<BEvent> listEvents= organizationAPI.saveConfiguration( configuration,  pageResourceProvider.getPageName(), apiSession.getTenantId());
+                if (BEventFactory.isError( listEvents))
+                {
+                	actionResult.put("status", "Error");
+                }
+                else
+                	actionResult.put("status", "Done");
 					
 						
-					logger.info("######################################  New drop zone["+dropzone+"] archiveFile["+archivezone+"]");
+				logger.info("######################################  New drop zone["+configuration.getDropZone()+"] archiveFile["+configuration.getArchiveZone()+"]");
 					
 				
-				} catch (Exception e) {
-					logger.severe( "Write the properties file :"+e.toString());
-					actionResult.put("status", "Failure");
-				} finally {
-					if (output != null) {
-						try {
-							output.close();
-						} catch (IOException e) {
-							logger.severe( "Close the properties file:"+ e.toString());
-						}
-					}
-				}
-					
 				// prepare the result for the history
 				HashMap<String, Object> history = new HashMap<String, Object>();
 				
@@ -204,12 +184,13 @@ public class Index implements PageController {
 
 			// ------------------------------------------------------------------------ refresh
             } else if ("refresh".equals(action))  {
-				readProperties( pageResourceProvider );
-				
-                logger.info("~~~~~~~~~~~~~~~~Americain(Index.groovy) American refreshes drop zone["+dropzone+"] archiveFile["+archivezone+"]");
+                Configuration configuration = organizationAPI.loadConfiguration(pageResourceProvider.getPageName(), apiSession.getTenantId());
+        		
+                
+                logger.info("~~~~~~~~~~~~~~~~Americain(Index.groovy) American refreshes drop zone["+configuration.dropZone+"] archiveFile["+configuration.archiveZone+"]");
 				
                 
-                File pathOutputDir = new File(archivezone);
+                File pathOutputDir = new File(configuration.archiveZone);
                 boolean outputFolderIsHere = pathOutputDir.exists();
                 if (!outputFolderIsHere) {
                     HashMap<String, Object> actionResult = new HashMap<String, Object>();
@@ -225,12 +206,8 @@ public class Index implements PageController {
                 }
 
                 if (outputFolderIsHere) {
-					APISession session = pageContext.getApiSession()
-					IdentityAPI identityApi = TenantAPIAccessor.getIdentityAPI(session);
-					ProfileAPI profileApi = TenantAPIAccessor.getProfileAPI(session);
 
-					OrganizationAccess organizationAccess = new OrganizationAccess( identityApi, profileApi );
-					ParametersOperation parametersLoad = ParametersOperation.getInstance( optionParametersOperation );
+					ParametersOperation parametersLoad = ParametersOperation.getInstance( configuration.parametersOperation );
 					
 					if (parametersLoad==null)
 					{
@@ -244,7 +221,7 @@ public class Index implements PageController {
 					{
 		                logger.info("~~~~~~~~~~~~~~~~Americain(Index.groovy) Start pooling dir");
 
-						actions.addAll( organizationAccess.saveOrganizationFromDir( dropzone, archivezone, parametersLoad ));
+						actions.addAll( organizationAPI.saveOrganizationFromDir( configuration.getDropZone(), configuration.getArchiveZone(), parametersLoad ));
 		                logger.info("~~~~~~~~~~~~~~~~Americain(Index.groovy) End Start pooling dir");
 					}					
 					logger.info("American ends one file");
@@ -255,7 +232,8 @@ public class Index implements PageController {
                
             } else if ("uploadbar".equals(action))  {
 			
-				readProperties( pageResourceProvider );
+            	 Configuration configuration = organizationAPI.loadConfiguration(pageResourceProvider.getPageName(), apiSession.getTenantId());
+         		
 				
                 HashMap<String, Object> actionResult = new HashMap<String, Object>();
                 actionResult.put("name", "Archive Upload");
@@ -263,23 +241,53 @@ public class Index implements PageController {
 
 				String uploadedFile = request.getParameter("file");
 				String uploadedFileName = request.getParameter("name");
-				if (uploadedFile.length() == 0 && (new File(uploadedFile)).exists()) {
+				String completeUploadFile="";
+
+				File pageDirectory = pageResourceProvider.getPageDirectory();
+				
+				// get the temporary name
+				List<String> listParentTmpFile = new ArrayList<String>();
+				try
+				{
+					listParentTmpFile.add( pageDirectory.getCanonicalPath()+"/../../../tmp/");
+					listParentTmpFile.add( pageDirectory.getCanonicalPath()+"/../../");
+				}
+				catch (Exception e)
+				{
+					logger.info("American : error get CanonicalPath of pageDirectory["+e.toString()+"]");					
+					return;
+				}
+				
+				for (String pathTemp : listParentTmpFile)
+				{
+					logger.info("American : CompleteuploadFile  TEST ["+pathTemp+uploadedFile+"]");	
+					if (uploadedFile.length() > 0 && (new File(pathTemp+uploadedFile)).exists()) {
+						completeUploadFile=(new File(pathTemp+uploadedFile)).getAbsoluteFile() ;
+						logger.info("American : CompleteuploadFile  FOUND ["+completeUploadFile+"]");					
+					}
+				}
+				
+				
+				
+				
+				
+				if (completeUploadFile.length() == 0 && (new File(completeUploadFile)).exists()) {
 					actionResult.put("status", "Error: an error occurred during the upload request");
 				} else {
 					try {
-						if(uploadedFile.endsWith(".csv")) {
-							FileUtils.copyFile(new File(uploadedFile), new File(dropzone + File.separator + uploadedFileName));
+						if(completeUploadFile.endsWith(".csv")) {
+							FileUtils.copyFile(new File(completeUploadFile), new File(configuration.getDropZone() + File.separator + uploadedFileName));
 						} else {
 							actionResult.put("status", "Error: The uploaded file \"" + uploadedFile + "\" is not taken into account as it is not a CSV file");
 						}
 						
-						(new File(uploadedFile)).delete();
+						(new File(completeUploadFile)).delete();
 						
 						if(uploadedFile.endsWith(".csv")) {
-							actionResult.put("status", "The Source file \"" + uploadedFile + "\" has been uploaded in the Monitor directory ["+dropzone+"]");
+							actionResult.put("status", "The Source file \"" + uploadedFile + "\" has been uploaded in the Monitor directory ["+configuration.getDropZone()+"]");
 						}
 					} catch(Exception e) {
-						actionResult.put("status", "Error: The Source file \"" + uploadedFile + "\" has not been uploaded in the archive directory due to execution error");
+						actionResult.put("status", "Error: The Source file \"" + uploadedFile + "\" has not been uploaded in the archive directory due to execution error "+e.toString());
 					}
 				}
 
@@ -299,42 +307,6 @@ public class Index implements PageController {
     } // end doGet
 
 	
-	/**
-	* no way to keep value on the groovy : we have to read again the properties
-	*/
-	private void readProperties(PageResourceProvider pageResourceProvider )
-	{
-	    Logger logger= Logger.getLogger("org.bonitasoft");
-		
-		try {
-			Properties properties = new Properties();
-
-			InputStream is = pageResourceProvider.getResourceAsStream("resources/conf/custompage.properties");
-			properties.load(is);
-			is.close();
-
-			String temp = properties.get(dropzoneProperty);
-			if(temp != null && !temp.isEmpty()) {
-				dropzone = temp;
-			}
-			temp = properties.get(archivezoneProperty);
-			if(temp != null && !temp.isEmpty()) {
-				archivezone = temp;
-			}
-			
-			// read all Properties
-			for (String property : com.twosigma.bonitasoft.organization.ParametersOperation.listParametersOperation)
-			{
-				String value = properties.get(property);
-				optionParametersOperation.put(property, value );
-			}
-			// logger.info("ReadProperties option["+optionParametersOperation+"]");
-			
-		} catch(Exception e) {
-				logger.severe("Exception e :"+e.toString());
-		}
-			
-	}
 
 	
     private void runTheBonitaIndexDoGet(HttpServletRequest request, HttpServletResponse response, PageResourceProvider pageResourceProvider, PageContext pageContext) {
