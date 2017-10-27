@@ -4,20 +4,42 @@
  <groupId>com.bonitasoft.custompage</groupId>
   <artifactId>CustomPageAmerican</artifactId>
   <version>1.0.0</version>
+  <properties>
+   	<!--  <bonitaversion>7.2.4</bonitaversion> --> 
+	<!--  <bonitaversion>7.5.4</bonitaversion> -->
+	<bonitaversion>7.5.4</bonitaversion>
+  </properties>
   <name>CustomPageAmerican</name>
    <dependencies>
   
   	 
-  	<dependency>
-  		<groupId>org.bonitasoft.engine</groupId>
-  		<artifactId>bonita-client</artifactId>
-  		<version>6.3.6</version>
-	</dependency>
+  	
+	
+	<!-- mvn install:install-file -Dfile=bonita-common-sp-7.2.4.jar -DgroupId=com.bonitasoft.engine -DartifactId=bonita-common-sp -Dversion=7.2.4 -Dpackaging=jar -->
+	
 	<dependency>
   		<groupId>org.bonitasoft.engine</groupId>
-  		<artifactId>bonita-server</artifactId>
-  		<version>6.3.6</version>
+  		<artifactId>bonita-client</artifactId>
+  		<version>${bonitaversion}</version>
 	</dependency>
+	
+	<dependency>
+  		<groupId>com.bonitasoft.engine</groupId>
+  		<artifactId>bonita-common-sp</artifactId>
+  		<version>${bonitaversion}</version>
+	</dependency>
+	<!-- mvn install:install-file -Dfile=bonita-common-sp-7.2.4.jar -DgroupId=com.bonitasoft.engine -DartifactId=bonita-common-sp -Dversion=7.2.4 -Dpackaging=jar -->
+	  <dependency>
+        <groupId>com.bonitasoft.log.event</groupId>
+        <artifactId>bonita-event</artifactId>
+        <version>1.0.0</version>
+    </dependency>
+    
+	<dependency>
+			<groupId>org.bonitasoft.ext.BonitaProperties</groupId>
+			<artifactId>bonita-properties</artifactId>
+			<version>1.4.2</version>
+		</dependency>
 	<dependency>
 			<groupId>com.googlecode.json-simple</groupId>
 			<artifactId>json-simple</artifactId>

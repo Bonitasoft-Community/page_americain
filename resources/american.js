@@ -104,20 +104,19 @@
 						
 				console.log("refreshfrombtn : PLAY IT");
 
-				$.ajax({
-					method : 'GET',
-					url : '?page=custompage_american&action=refresh',			
-					contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
-					success : function (result) {
+				var url='?page=custompage_american&action=refresh';
+				
+				$http.get( url )
+					.success( function (result) {
 						self.wait=false;
-						var resultArray = JSON.parse(result);
-						var arrayLength = resultArray.length;
+						var actionsList = result.actions;
+						var arrayLength = actionsList.length;
 						for (var i = 0; i < arrayLength; i++) {
-							$rootScope.history.unshift(resultArray[i]);
+							$rootScope.history.unshift(actionsList[i]);
 						}
 						if(arrayLength == 0) {
 							me.emptyrefreshpop();
-						} else if(resultArray[0].name.startsWith("Create Archive folder")) {
+						} else if(actionsList[0].name.startsWith("Create Archive folder")) {
 							me.createrefreshpop();
 							if(arrayLength > 1) {
 								me.fullrefreshpop();
@@ -127,19 +126,13 @@
 						}
 						me.refreshisrunning = false;
 						$scope.$apply();
-					},
-					error: function (result) {
+					})
+					.error( function (result) {
 						self.wait=false;
 						me.errorpop();
 						me.refreshisrunning = false;
 						$scope.$apply();
-					},
-					complete: function () {
-						self.wait=false;
-						me.refreshisrunning = false;
-					}
-				});
-				
+					});
 			}
 		};
 
