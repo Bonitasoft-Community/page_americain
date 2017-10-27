@@ -1,0 +1,1 @@
+copy americanPlayers.csv monitor

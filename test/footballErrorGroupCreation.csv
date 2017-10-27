@@ -1,0 +1,15 @@
+# This import must failed because the parent Path "Acme" does not exist ( /Acme is the correct one)
+HEADER;ROLE;RoleName;RoleDisplayName
+HEADER;USER;UserName;UserPassword;UserEnable;UserFirstName;UserLastName
+HEADER;GROUP;GroupName;GroupDisplayName;GroupParentPath
+HEADER;MEMBERSHIP;UserName;RoleName;GroupPath
+HEADER;PROFILE;ProfileName;ProfileDescription
+HEADER;PROFILEMEMBER;ProfileName;UserName;RoleName;GroupPath
+# data now
+# ------------- user
+GROUP;football;football display name;NotExist
+#ROLE;player;football playersss
+#USER;Francis.Huster;bpm;True;Francis;Husterss
+#USER;enrico;bpm;True;Enrico;Bates
+#MEMBERSHIP;enrico;player;/Acme/football
+#MEMBERSHIP;Francis.Huster;player;/Acme/football
