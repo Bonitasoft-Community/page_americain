@@ -21,7 +21,11 @@
 	appCommand.controller('DigesterController', function($rootScope, $scope, $upload, $http, toaster) {
 		var me = this;
 		
+<<<<<<< HEAD
 		this.currentUploadFileIndex = 0;
+=======
+		$scope.currentUploadFileIndex = 0;
+>>>>>>> 3ddeeea1b4aec128a3935b2368517b1e6d60cb3d
 		this.refreshisrunning = false;
 		
 		$rootScope.history = [];
@@ -104,6 +108,7 @@
 						
 				console.log("refreshfrombtn : PLAY IT");
 
+<<<<<<< HEAD
 				var url='?page=custompage_american&action=refresh';
 				
 				$http.get( url )
@@ -111,6 +116,16 @@
 						self.wait=false;
 						var actionsList = result.actions;
 						var arrayLength = actionsList.length;
+=======
+				$.ajax({
+					method : 'GET',
+					url : '?page=custompage_american&action=refresh',			
+					contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+					success : function (result) {
+						self.wait=false;
+						var resultArray = JSON.parse(result);
+						var arrayLength = resultArray.length;
+>>>>>>> 3ddeeea1b4aec128a3935b2368517b1e6d60cb3d
 						for (var i = 0; i < arrayLength; i++) {
 							$rootScope.history.unshift(actionsList[i]);
 						}
@@ -126,13 +141,28 @@
 						}
 						me.refreshisrunning = false;
 						$scope.$apply();
+<<<<<<< HEAD
 					})
 					.error( function (result) {
+=======
+					},
+					error: function (result) {
+>>>>>>> 3ddeeea1b4aec128a3935b2368517b1e6d60cb3d
 						self.wait=false;
 						me.errorpop();
 						me.refreshisrunning = false;
 						$scope.$apply();
+<<<<<<< HEAD
 					});
+=======
+					},
+					complete: function () {
+						self.wait=false;
+						me.refreshisrunning = false;
+					}
+				});
+				
+>>>>>>> 3ddeeea1b4aec128a3935b2368517b1e6d60cb3d
 			}
 		};
 
