@@ -37,6 +37,11 @@
 			<location>C:/atelier/BPM-SP-7.2.0/workspace/AI Training/bonita_home/client/tenants/1/work/pages/custompage_american/index.html</location>
 		</link>
 		<link>
+			<name>custompage/7.2.4/Actions.groovy</name>
+			<type>1</type>
+			<locationURI>PARENT-5-PROJECT_LOC/bonita/BPM-SP-7.2.4-c/workspace/Auckland%202/bonita_home/client/tenants/1/work/pages/custompage_american/Actions.groovy</locationURI>
+		</link>
+		<link>
 			<name>custompage/7.2.4/Index.groovy</name>
 			<type>1</type>
 			<locationURI>PARENT-5-PROJECT_LOC/bonita/BPM-SP-7.2.4-c/workspace/Auckland%202/bonita_home/client/tenants/1/work/pages/custompage_american/Index.groovy</locationURI>
