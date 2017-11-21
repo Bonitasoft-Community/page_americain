@@ -195,25 +195,29 @@ public class ItemGroup extends Item {
 
 		// First, the PARENT must exist
 		String groupParentPath = itemInformation.get(cstGroupParentPath);
-		if (groupParentPath==null)
-			groupParentPath="";
-		if (groupParentPath.length()>0)
+		if (groupParentPath==null || groupParentPath.length()==0)
+			groupParentPath=null;
+		if (groupParentPath!=null && groupParentPath.length()>0)
 		{
 			try {
+				if (! groupParentPath.startsWith("/") && groupParentPath.length()>1)
+					groupParentPath= "/"+groupParentPath;
 				Group groupParent = identityAPI.getGroupByPath(groupParentPath);
 				groupParentPath= groupParent.getPath();
 			} catch (GroupNotFoundException e1) {
 				organizationLog.log(true, "OrganizationItemGroup.saveInServer", "Parent group Path[" + groupParentPath + "] not found");
 				allIsOk=false;
 			}
-			
 		}
+		
 		// now, check if the group exist
 		Group group = null;
 		// String groupPath = groupParentPath + "/" + itemInformation.get(cstGroupName);
 		try {
 			SearchOptionsBuilder searchOptionsBuilder = new SearchOptionsBuilder(0,10);
 			searchOptionsBuilder.filter( GroupSearchDescriptor.NAME,  (String) itemInformation.get(cstGroupName));
+			searchOptionsBuilder.and();
+			searchOptionsBuilder.filter( GroupSearchDescriptor.PARENT_PATH,  groupParentPath);
 			SearchResult<Group> searchResult = identityAPI.searchGroups(searchOptionsBuilder.done());
 			if (searchResult.getCount()>0)
 				group = searchResult.getResult().get(0);
@@ -238,7 +242,7 @@ public class ItemGroup extends Item {
 			// a creation
 			try {
 				isCreated = true;
-				groupCreator.setParentPath(groupParentPath);
+				groupCreator.setParentPath(groupParentPath); // may be null for the root
 				
 				organizationLog.log(false, "OrganizationItemGroup.saveInServer", "Insert Group[" + itemInformation.get(cstGroupName) + "] path[" + groupParentPath + "]");
 				Group groupCreated = identityAPI.createGroup(groupCreator);
@@ -252,8 +256,10 @@ public class ItemGroup extends Item {
 			// an update
 			try {
 				isCreated = false;
+				if (groupParentPath==null)
+					groupParentPath="";
 				String currentParentPath = group.getParentPath() == null ? "" : group.getParentPath();
-				if (!groupParentPath.equals(currentParentPath))
+				if ( !currentParentPath.equals(groupParentPath))
 				{
 					allIsOk= invokeMethod( groupUpdater, "updateParentPath", groupParentPath, organizationLog);
 					if (!allIsOk)
