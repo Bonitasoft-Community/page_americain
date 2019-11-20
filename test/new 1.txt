@@ -1,0 +1,869 @@
+/**
+ * The controller is a JavaScript function that augments the AngularJS scope and exposes functions that can be used in the custom widget template
+ * 
+ * Custom widget properties defined on the right can be used as variables in a controller with $scope.properties
+ * To use AngularJS standard services, you must declare them in the main function arguments.
+ * 
+ * You can leave the controller empty if you do not need it.
+ */
+function ($scope, $filter) {
+
+    var ctrl=this;
+    
+	this.message='';
+	
+    this.myListOptions = [{key:"IE",            display:"Internet"},
+                {key:"CHROME",           display:"Chrome" },
+                {key:"FIREFOX",          display:"Firefox" }];
+    this.choosenValue_select= this.myListOptions[2];
+    this.getTestListSelect = function() { 
+        return this.myListOptions; };
+        
+    this.getTestListDisplay = function() { 
+        console.log("getTestListDisplay.BEGIN");
+        var listDisplay=[];
+        for (var i=0;i<this.myListOptions.length;i++) {
+            listDisplay.push( this.myListOptions[ i ].display);
+        }
+        console.log("getTestListDisplay.BEGIN");
+        return listDisplay; 
+        
+    };
+    this.getTestDisplay = function( item )
+    {
+        return item.display;
+    }
+	
+     //---------
+	// Return the InitValue
+	this.getWSelectDateLongInitValue = function(header, valueDate) {
+
+	  if (header.control !== "datelong")
+	  {
+	  	// console.log( "getWSelectDateLongInitValue: call for header["+header.control+"] return default value[1999-01-01");
+		return "1999-01-01";
+	 }
+	  // console.log( "getWSelectDateLongInitValue: call for header["+header.control+"]");
+	  if (valueDate==null)
+		return "";
+		// return true if value is not a number
+	  if (isNaN(valueDate) && isFinite(valueDate))
+		return "";
+		
+	  // console.log( "getWSelectDateLongInitValue: valueDate["+JSON.stringify(valueDate)+"]");
+	  var dateObject = new Date( valueDate );
+	  
+	  // console.log( "getWSelectDateLongInitValue: valueDate["+valueDate+"] dateLong["+dateObject.getTime()+"]");
+	  return dateObject.toISOString().substring(0, 10);
+	}
+	
+	//---------
+	// User select a date, then calculate the new DateLong from the date
+	// input : "2016-03-30T07:00:00.000Z" => Produce 1459321200000
+	this.getWSelectDateLongFromDate = function(header, valueDate) {
+	   	if (header.control !== "datelong")
+			return "";
+		if (isNaN(valueDate))
+			return "";
+	
+	  var dateObject = new Date( valueDate );
+	  console.log( "selectDateLongFromDate: valueDate["+valueDate+"] dateLong["+dateObject.getTime()+"]");
+	  
+	  return dateObject.getTime();
+	}
+	
+	//--------- widget SELECT : for one OptionItem (ex {key:"FR", display:"France"}, according header.listoptiondisplay == "display", return "France"
+	this.getWSelectDisplayFromItem = function ( header, optionItem ) {
+	    if (header.control === 'select')
+	    {
+	        // console.log("getWSelectDisplayFromItem= "+ JSON.stringify( optionItem ));
+
+            if (header.listoptiondisplay===null)
+            {
+    	        // console.log(" -defaultdisplay:"+optionItem.display+")");
+	            return optionItem.display;
+            }
+	        return optionItem[ header.listoptiondisplay ];
+	    }
+	    return null;
+	}
+	
+	this.changeCheckList = function( header, oneRecord, keyCheckbox )
+	{
+		if (oneRecord[ header.name+'_'+keyCheckbox] == true )
+		{
+			if (typeof oneRecord[ header.name ] === 'undefined')
+				oneRecord[ header.name ] = [];
+			oneRecord[ header.name ].push( keyCheckbox );
+		}
+		else
+		{
+			var listValues = oneRecord[ header.name ];
+			for (var i=0;i<listValues.length;i++)
+			{
+				if (keyCheckbox == listValues[ i ]) {
+					listValues = listValues.splice( i, 1);
+				}
+			}
+		}
+	};
+	// --------------------------------------------------
+    // ------------------ Check
+    // --------------------------------------------------
+
+    this.errorMessage="";
+    this.checkRules = function() {
+		var timeBegin = this.beginTime("checkRules");
+
+		this.message='Checking Rules';
+		
+        // console.log("~~~~~~~~~~~~~~~~~~ CheckRules");
+        // console.log("checkRules : value="+$scope.properties.value );
+	    if (($scope.properties.value === null) || (typeof $scope.properties.value === 'undefined')) {
+			// console.log("~~~~~~~~~~~~~~~~~~ CheckRules: no data");
+			this.message='';
+			this.endTime(timeBegin, "checkRules - no Data");
+
+			return;
+		}
+        this.errorMessage="";
+        if ($scope.properties.checkrules === null) {
+            // console.log("~~~~~~~~~~~~~~~~~~ CheckRules:No rules defines");
+			this.message='';
+			this.endTime(timeBegin, "checkRules - no Rules");
+
+            return;
+        }
+        for (var i=0;i<$scope.properties.checkrules.length;i++) {
+            var rule = $scope.properties.checkrules[ i ];
+            // console.log("~~~~~~~~~~~~~~~~~~ CheckRules:rule "+rule.rule);
+              
+            if (rule.rule == 'sumcol') {
+                var totalCol = 0;
+                // console.log("~~~~~~~~~~~~~~~~~~ CheckRules:SumCol");
+                if (rule.totalsum === null) {
+                    this.errorMessage = this.errorMessage+ "rule "+rule.name+" the properties[totalsum] is not defined;"
+                }
+                if (rule.colname === null) {
+                    this.errorMessage = this.errorMessage+ "rule "+rule.name+" the properties[colname] is not defined;"
+                }
+                // now do the job
+                if ($scope.properties.value === null) {
+                    // console.log("~~~~~~~~~~~~~~~~~~ CheckRules:NoData");
+                } else {
+                    for (var j=0; j<$scope.properties.value.length; j++){
+    	                var oneRow = $scope.properties.value[ j ];
+    	                var valueRow = oneRow[ rule.colname ];
+    	                // console.log("OneRow.value = "+valueRow);
+    	                if (valueRow!==null) {
+    	                    totalCol = totalCol + valueRow;
+    	                }
+                    }
+                }
+                // console.log("compare "+totalCol+" and "+rule.totalsum);
+                if (totalCol !== rule.totalsum) {
+                    this.errorMessage = this.errorMessage+ rule.message+" : "+totalCol+";"
+                }
+            
+            } else if (rule.rule == 'uniquecol') {
+                 if (rule.colname === null) {
+                    this.errorMessage = this.errorMessage+ "rule "+rule.name+" the properties[colname] is not defined;"
+                }
+                // now do the job
+                if ($scope.properties.value === null) {
+                    // console.log("~~~~~~~~~~~~~~~~~~ CheckRules:NoData");
+                } else {
+                    var message="";
+                    for (var j2=0; j2<$scope.properties.value.length; j2++){
+    	                var oneRow2 = $scope.properties.value[ j2 ];
+    	                var valueRow2 = oneRow2[ rule.colname ];
+    	                // console.log("OneRow.value = "+valueRow);
+    	                for (var k=j2+1; k<$scope.properties.value.length; k++){
+    	                    var oneNextRow = $scope.properties.value[ k ];
+    	                    var valueNextRow = oneNextRow[ rule.colname ];
+                            if (valueRow2 === valueNextRow) {
+                                message = message +" : line "+(j+1)+"["+valueRow2+"] and "+(k+1)+"["+valueNextRow+"];"
+                            }
+    	                }
+                    }
+                    if (message!=="") {
+                        this.errorMessage = this.errorMessage+ rule.message+" "+message+" are identical";
+                    }
+                }
+            }
+            else {
+              this.errorMessage = this.errorMessage+ "Unknow rule ["+rule.rule+"];";
+            }
+        }
+        // console.log("~~~~~~~~~~~~~~~~~~~ Rule message: "+this.errorMessage);
+		this.message='';
+		this.endTime(timeBegin, "checkRules");
+
+	}
+    
+    this.getErrorMessage = function () {
+         console.log("Get Error message: "+this.errorMessage);
+        return this.errorMessage;
+    }
+    
+    
+  
+        
+    // add a new variable in AngularJS scope. It'll be usable in the template directly with {{ backgroundColor }} 
+    this.filterrecord={};
+    this.reverseSort=false;
+    this.orderByField="";
+    // this then the HTML can directly modify this value
+    this.recordpagenumber=1;
+	this.recorditemsperpage= 1000;
+	
+	// --------------------------------------------------
+    //------------------ Action rules
+    // --------------------------------------------------
+    this.defaultSort = function () 
+    {
+        // console.log("--------------- DefaultSort?");
+        if ($scope.properties.actionsRules !== null)
+        {
+            for (var i=0;i<$scope.properties.actionsRules.length;i++) {
+                var actionRule = $scope.properties.actionsRules[ i ];
+                // console.log("--------------- Sort:actionrule.action="+actionRule.action);
+                if (actionRule.action === 'sort') {
+                    
+                    // console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>> Sort ! ");
+                     $scope.properties.value.sort( function(a, b){
+                         if (typeof actionRule.sort1 === 'undefined')
+                            return 0;
+                         var valueA = a[ actionRule.sort1 ];
+                         var valueB = b[ actionRule.sort1 ];
+                         // console.log(" -- sort on["+ actionRule.sort1+"] a["+JSON.stringify(a)+"] b["+JSON.stringify(b)+"]");
+                        
+                         // console.log(" -- sort type["+( typeof valueA )+"] valueA["+valueA+"] valueB["+valueB+"]");
+                         if (valueA < valueB)
+                            return -1;
+                         if (valueA > valueB)
+                            return 1;
+                        // egals : check sort2
+                         var valueA2 = a[ actionRule.sort2 ];
+                         var valueB2 = b[ actionRule.sort2 ];
+                         if (valueA2 < valueB2)
+                            return -1;
+                         if (valueA2 > valueB2)
+                            return 1;
+                        return 0;
+                     } );
+                }
+            }
+        }
+    }
+    this.defaultSort();
+    
+    // style on header
+    this.getStyleHeader= function (header) {
+	    if (typeof header.styleheader !== 'undefined') {
+            return header.styleheader ;
+        }
+		return "";
+	}
+	
+    // ActionStyle
+    this.getActionStyleCell = function( header, oneRecord )
+    {
+        // console.log("--------------- getActionStyleCell ["+header.name+"]");
+        if ($scope.properties.actionsRules !== null)
+        {
+            for (var i=0;i<$scope.properties.actionsRules.length;i++) {
+                var actionRule = $scope.properties.actionsRules[ i ];
+                // console.log("--------------- getActionStyleCell:actionrule.action="+actionRule.action);
+                if (actionRule.action === 'styleline') {
+                    if (this.actionApply("Style", actionRule, oneRecord))
+                    {
+                       // console.log("--------------- getActionStyleCell:actionRule Styleline TRUE return ["+actionRule.style+"]");
+                       return actionRule.style;
+                    }
+                }
+            }
+        }
+  
+
+       var attrName = header.name + "_style";
+        // console.log("--------------- getActionStyleCell: by attrName ["+ attrName + "]" );
+        if ((typeof oneRecord[ attrName ] !== 'undefined') && ( oneRecord[ attrName ] !== null)) {
+            return oneRecord[ attrName ];
+        }
+        
+        // console.log("--------------- getActionStyleCell: by styleCol" );
+        if ((typeof header.stylecol != 'undefined') && (header.stylecol !== null)) {
+            return header.stylecol;
+        }
+
+     
+        return "";
+    }
+    
+    // ------------- P1 T getActionReadOnly
+    this.getActionReadOnly = function(header, oneRecord )
+    {
+       if ((typeof oneRecord === 'undefined'))
+       {
+          // console.log("-----------getActionReadOnly:["+header.name+"] :oneRecord undefined  HeaderReadOnly ["+header.readonly+"]");
+          return header.readonly; 
+       }
+        var readOnlyAttribut = oneRecord[ header.name+'_readonly' ];
+        // console.log("----------- getActionReadOnly: ["+header.name+"] : ReadOnly ["+header.readonly+"] readOnlyAttribut ["+readOnlyAttribut+"]")
+        if ((typeof readOnlyAttribut != 'undefined') && (readOnlyAttribut !== null)) {
+            return readOnlyAttribut;
+        }
+       
+        // console.log("-----------getActionReadOnly:actionRules=["+$scope.properties.actionsRules+"]");
+                
+        if ($scope.properties.actionsRules !== null)
+        {
+            for (var i=0;i<$scope.properties.actionsRules.length;i++) {
+                var actionRule = $scope.properties.actionsRules[ i ];
+                if (actionRule.action === 'readonlyline') {
+                    //console.log("--------------- getReadOnly:["+header.name+"] :actionrule.action="+actionRule.action);
+                    if (this.actionApply( "ReadOnly", actionRule, oneRecord))
+                    {
+                       //console.log("--------------- getReadOnly:["+header.name+"]: ActionRule return [true]");
+                       return true;
+                    }
+                }
+            }
+        }
+        
+        // less priority : the header
+         if ((typeof header.readonly != 'undefined') && (header.readonly !== null)) {
+            return header.readonly;
+        }
+        return false;
+    }
+    
+    // HideLine
+    this.getActionHideLine = function( oneRecord )
+    {
+		// user manual operation by the user get the lead
+		if ( ! (typeof oneRecord[ "prefixchildrenbearwidget"] === 'undefined'))
+		{
+		    var prefixName = oneRecord[ "prefixchildrenbearwidget"];
+			// this is a Children ! So, go up in the list to the parent
+			var parentToggle = oneRecord[ "parenttooglebearwidget"];
+			// console.log("--------------- getActionHideLine: CHILD record, get the PARENT record : "+JSON.stringify( parentToggle ) );
+			if (! (typeof parentToggle === 'undefined'))
+				return ! parentToggle; 
+		}
+		
+		
+        //console.log("--------------- getActionHideLine: by record "+JSON.stringify( oneRecord ) );
+        if ($scope.properties.actionsRules !== null)
+        {
+            for (var i=0;i<$scope.properties.actionsRules.length;i++) {
+                var actionRule = $scope.properties.actionsRules[ i ];
+                // console.log("---------------  actionRule.action="+actionrule.action);
+                if (actionRule.action === 'hideline') {
+                    // console.log("--------------- getActionHideLine::actionrule.name="+actionRule.name);
+                    if (this.actionApply( "HideLine", actionRule, oneRecord))
+                    {
+                       // console.log("--------------- getActionHideLine: ActionRule return [true]");
+                       return true;
+                    }
+                }
+            }
+        }
+		
+
+		
+        return false;
+    }
+    
+    // private: check if the rule apply to this record
+    this.actionApply= function( source, actionRule, oneRecord) {
+         // console.log("--------------- getStyle:actionRule Styleline attribut["+ actionRule.attribut+"]");
+        
+        var resultAttribut = true;
+        var resultVariable = true;
+        var valueAttribute = null;
+        var valueVariable = null;
+        
+        if ((typeof  actionRule.attribut != 'undefined') && actionRule.attribut !== null) {
+            valueAttribut = oneRecord[ actionRule.attribut ];
+            if ((typeof valueAttribut != 'undefined') && (valueAttribut === actionRule.valueattribut ))
+                resultAttribut= true;
+            else
+                resultAttribut=false;
+        }
+        // by the variable
+        if ((typeof  actionRule.variable != 'undefined') &&  actionRule.variable !== null) {
+
+            valueVariable = $scope.properties.dynamicLists[ actionRule.variable ];
+            // console.log("--------------- actionApply["+source+"] By Variable["+ actionRule.variable +"] (["+actionRule.valuevariable+"])=["+valueVariable+"] ? "+resultVariable);
+            if ((typeof valueVariable != 'undefined') && (valueVariable === actionRule.valuevariable ))
+                resultVariable= true;
+            else 
+                resultVariable = false; 
+        }
+        
+        // console.log("--------------- actionApply["+source+"] Attribut["+ actionRule.attribut+"] (["+actionRule.valueattribut+"]) ==["+valueAttribut+"] ? "+resultAttribut + " Variable["+ actionRule.variable+"] (["+actionRule.valuevariable+"])=["+valueVariable+"] ? "+resultVariable);
+
+        if (resultAttribut && resultVariable)
+            return true;
+        else
+            return false;
+    };
+    
+   this.btnRemove = function (header, oneRecord) {
+		
+		if (header.confirmation) {
+			var message= header.confirmationmessage;
+			if (typeof message == 'undefined')
+				message = "Would you like to delete this line ?";
+			if (! confirm( message ))
+					return;
+		}
+		var index=-1;
+		for (var i=0;i<$scope.properties.value.length;i++)
+		{
+			if (oneRecord == $scope.properties.value[ i ]) {
+				index=i;
+			}
+		}
+		if (index != -1)
+			$scope.properties.value.splice( index ,1);
+   }
+   this.btnInsert = function (header, oneRecord, isAdd) {
+
+		var index=-1;
+		for (var i=0;i<$scope.properties.value.length;i++)
+		{
+			if (oneRecord == $scope.properties.value[ i ]) {
+				index=i;
+			}
+		}
+		var defaultValue;
+		if (typeof header.defaultvalue == 'undefined')
+			defaultValue={};
+		else
+			defaultValue = angular.copy( header.defaultvalue);
+		
+		var increment=0;
+		if (isAdd)
+			increment=1;
+			
+		if (index != -1)
+			$scope.properties.value.splice( index + increment, 0, defaultValue);
+		else
+			$scope.properties.value.push( defaultValue );
+		this.prepareData();
+   }
+  
+	// ------------------- control
+	
+	
+	// widget SELECT : return the list of option for the header. Return a list like [{key:"IE", display:"Internet"},{key:"CHROME",display:"Chrome" },{key:"FIREFOX", display:"Firefox" }]
+	//   Note at this moment, we don't know which attribut is the DISPLAY and which is the KEY
+	this.getWSelectListOptionsItem = function( header )
+	{
+	    // console.log("getWSelectListOptionsItem: header["+header.name+"] control["+header.control+"]");
+    	   
+	    if (header.control ==='select' || header.control === 'checkboxlist')
+	    {
+    	    // console.log('getWSelectListOptionsItem: based on listoption/header='+ JSON.stringify(header));
+    	    if ((typeof header.listoptions != 'undefined') && header.listoptions !== null) {
+    	        // console.log('getWSelectListOptionsItem: return STATIC  listOptions='+ JSON.stringify(header.listoptions));
+    	        return header.listoptions;
+    	    }
+    	    if ((typeof header.listoptionsvariable != 'undefined') &&  header.listoptionsvariable !== null) {
+    	        // console.log("getWSelectListOptionsItem: return DYNAMIC listoptionsvariable["+ header.listoptionsvariable+"]");
+    	        var value = $scope.properties.dynamicLists[ header.listoptionsvariable ];
+    	        // console.log("getWSelectListOptionsItem:return DYNAMIC listoptionsvariable["+ header.listoptionsvariable+"] listOptions= "+ JSON.stringify(value ));
+    	        return value;
+    	    }
+            // console.log("getWSelectListOptionsItem: return NO LIST");
+    	    this.errorMessage = this.errorMessage + header.name+": no option defined in the list use [listoptions] or [listoptionsvariable] properties;";
+	    }
+	    return null;
+	};
+	
+	// Widget Select : get the select optionItem. Record is 
+	// [ browser:"FR", pid:334] and header = {name:browser, listoptionkey:"key", listoption: [{key:"GR", display:"Germany"}, {key:"FR", display:"France"}]}
+	// then the function return the optionItem {key:"FR", display:"France"}
+	this.getWSelectGetSelected = function(  header, record ) {
+	     if (header.control ==='select') {
+    	    var listOptionsItem = this.getWSelectListOptionsItem( header );
+    	    // console.log("getWSelectGetSelected: ******* name["+header.name+"] listOptions="+JSON.stringify(listOptionsItem)+" record="+JSON.stringify( record )+";");
+    	    if (listOptionsItem === null)
+    	        return null;
+    	    
+    	    var valueInRecord = record[ header.name ];
+    	    // console.log("getWSelectGetSelected:  InitSelect ["+header.name+"] : valueInRecord["+valueInRecord+"]");
+
+    	    for (var i=0;i<listOptionsItem.length;i++) { 
+    	        var optionRange = listOptionsItem[ i ];
+    	        // console.log( "getWSelectGetSelected X"+JSON.stringify(optionRange) );
+    	        var keyRange = this.getWSelectItemToKey( header, optionRange );
+        	    // console.log( "getWSelectGetSelected KeyRange=["+keyRange+"];" );
+
+    	        if (keyRange === valueInRecord ) {
+            	    // console.log( "getWSelectGetSelectedReturnRange=["+i+"] : ["+JSON.stringify(listOptionsItem[ i ])+"];" );
+    	            return listOptionsItem[ i ];
+    	        }
+    	    };
+    	    // console.log("getWSelectGetSelectedInitSelect ["+header.name+"] : ** DefaultValueNotFound ** defaultValue["+defaultValue+"] listOptions=["+ JSON.stringify(listOptions )+"]");
+	     }
+    	 return null;
+    	    
+	}
+	
+	
+	this.getListSelect = function() { return null };
+	
+	// widget SELECT : return the VALUE of the key of the list. Example : itemOption={ "country":"France", "PIB":"445"} / header.listoptionkey="country" => return "France"
+	this.getWSelectItemToKey = function ( header, itemOption ) {
+	        // this.errorMessage = this.errorMessage+" (getListKey";
+	        // console.log('getListKey= '+ JSON.stringify( itemOption ));
+	        if (header.listoptionkey===null) {
+    	        // console.log(" -defaultkey:"+record.key+")");
+	            return record.key;
+	        }
+	        // console.log(" -indirect("+header.listoptionkey+") : "+itemOption[ header.listoptionkey ]+")");
+
+	        return itemOption[ header.listoptionkey ];
+	}
+	
+	// --- pie data
+	this.getListPieData = function (header ) {
+	    var data = [ 12, 40, 66 ];
+	    // console.log('getListPieData='+JSON.stringify(data) );
+	    return data;
+	}
+	this.getListPieHeader = function (header ) {
+	    var header = [ "France","Germany","USA" ];
+	    // console.log('getListPieHeader='+JSON.stringify(header) );
+	    return header;
+	}
+
+	
+	
+    // --------------------------------------------------
+    // ------------------ Prepare Data
+    // --------------------------------------------------
+	this.prepareData = function() {
+		var timeBegin = this.beginTime("PrepareData");
+
+		this.message='Preparing data';
+		
+	    var j;
+	    var oneRecord;
+	    if (typeof $scope.properties.headervalue === 'undefined') {
+	        // console.log( "prepareData/timeLong: headervalue is undefined");
+			this.endTime(timeBegin, "PrepareData - headerUndefined");
+
+	        return false;
+	    }
+	    // console.log("PrepareData : value="+$scope.properties.value );
+	    if (($scope.properties.value === null) || (typeof $scope.properties.value === 'undefined')) {
+            // console.log("~~~~~~~~~~~~~~~~~~ prepareData:NoData");
+			this.endTime(timeBegin, "PrepareData - NoData");
+
+            return false;
+	     }
+	    
+	    // console.log("~~~~~~~~~~~~~~~~~~PrepareData : value.length="+$scope.properties.value.length );
+        
+	    for (var i=0; i<$scope.properties.headervalue.length; i++){
+
+	        var oneHeader = $scope.properties.headervalue[ i ];
+
+			if (oneHeader.control == 'datelong') {
+
+				 for (j=0; j<$scope.properties.value.length; j++){
+    	            oneRecord = $scope.properties.value[ j ];
+					var timeRow = oneRecord[ oneHeader.name ];
+					// console.log( "prepareData/timeLong_1: timeRow["+timeRow+"]");
+	  				// date is a Time, need to change it in a Date String format
+					var date = new Date(timeRow);
+					// when the input are in ReadOnly, the value on '_date' is not working, and the init value must be different
+					// than the init value ( ! ). In Read, Write, ng-model and value can be the same, or differrent
+					// so, to avoid that, on the datelong field, a method getWSelectDateLongInitValue is called.
+					oneRecord[ oneHeader.name+'_date' ] = date.toISOString().substring(0, 10);
+				}
+			}
+			if (oneHeader.control == 'select') {
+			    // console.log("manager headerControlSelect");
+			    
+				 for (j=0; j<$scope.properties.value.length; j++){
+    	                oneRecord = $scope.properties.value[ j ];
+						var selected = this.getWSelectGetSelected( oneHeader, oneRecord );
+						oneRecord[ oneHeader.name+'_select' ] = selected;
+						// console.log( "prepareData/select: value["+selected+"]");
+				}
+			}
+			
+			if (oneHeader.control == 'checkboxlist') {
+				 for (j=0; j<$scope.properties.value.length; j++){
+    	                oneRecord = $scope.properties.value[ j ];
+						var listvalues = oneRecord[ oneHeader.name ];
+						if (typeof listvalues != 'undefined')
+						{
+							for (k=0; k<listvalues.length; k++){
+								oneRecord[ oneHeader.name+'_'+listvalues[ k ] ]=true;
+							}
+						}
+				}
+			} // end checkboxlist
+			
+		} // end for header
+		this.message='';
+		
+		
+		// pagination ?
+		if (this.isShowPagination() && this.recorditemsperpage === 1000)
+		{
+			// setup the pagination to the first range
+			this.recorditemsperpage= $scope.properties.pagination[0].value;
+			console.log("PrepareData : setup the pagination to the first Range ["+this.recorditemsperpage+"]");
+		}
+	
+		this.endTime(timeBegin, "PrepareData ");
+
+		return true;
+	} // end of prepareData
+	
+	
+	
+    // ------------------- debug 
+	this.isShowDebug = function() {
+	    return $scope.properties.showdebug;
+	}
+	this.getContent = function () {
+	    return $scope.properties.value;
+	}
+	// ------------------- pagination 
+	this.isShowPagination = function() {
+	    return $scope.properties.pagination && $scope.properties.pagination.length>0;
+	}
+	
+    this.getStepPagination = function() {
+        return $scope.properties.pagination;
+    }
+
+	this.getRecordsNumber = function() {
+	    if (($scope.properties.value === null) || (typeof $scope.properties.value === 'undefined')) {
+            return 0;
+	    }
+	    return $scope.properties.value.length;
+	}
+	
+	this.getRecordsFilterNumber = function() {
+	    // console.log("************ filterRecordNumber = "+this.listrecordsfiltered.length);
+	    return this.listrecordsfiltered.length;
+	}
+	this.getRecordsItemPerPage = function() {
+	    // console.log("************ getRecordItemPerPage = "+this.recorditemsperpage);
+	    if (this.recorditemsperpage == null)
+	      return 100;
+	    return this.recorditemsperpage;
+	}
+	
+    this.getRecordsPage = function()
+	{
+	  var timeBegin = this.beginTime("getRecordsPage");
+
+	    if (($scope.properties.value === null) || (typeof $scope.properties.value === 'undefined')) {
+		    this.endTime(timeBegin, "getRecordsPage - no Data");
+
+            return null;
+	    }
+	    // console.log("===== getRecordsPage : ="+ $scope.properties.value);
+		// console.log("getRecordsPage : ="+ angular.toJson($scope.properties.value,true));
+	    //console.log("getRecordsPage : Orderby:"+this.orderByField+" - direction : "+this.reverseSort);
+	    var listOrdered = [];
+	    for (var i=0; i<$scope.properties.value.length; i++){
+	        var oneRow = $scope.properties.value[ i ];
+	        if (oneRow == null)
+	            $scope.properties.value[ i ] = {};
+	            
+	        listOrdered.push( oneRow );
+	    }
+
+		listOrdered = $filter('orderBy')($scope.properties.value, this.orderByField, this.reverseSort);
+		$scope.properties.value = listOrdered;
+		
+	    //console.log("Result After Order="+ angular.toJson(listOrdered  , true));
+	    //console.log("filter : ="+ angular.toJson(this.filterrecord , true));
+	    
+		this.listrecordsfiltered = $filter('filter') (listOrdered, this.filterrecord );
+		
+		if (this.listrecordsfiltered===null)
+		{
+			this.endTime(timeBegin, "getRecordsPage - no Filter");
+			return null;
+		}
+		
+		var listChildren = [];
+		var listHeaderControlChilden = {};
+		for (var h=0; h<$scope.properties.headervalue.length; h++){		
+	        var header = $scope.properties.headervalue[ h ];
+			// we look for all header.parent = "period" 
+			if ( ! (typeof header.parent === 'undefined')) {
+				if (listChildren.indexOf(header.parent)=== -1)
+					listChildren.push( header.parent );
+			}
+			// is an header pilot a children ? 
+			if ( header.control === 'children') {
+				listHeaderControlChilden[ header.name ] = header;
+			}
+		}
+			
+		
+		 // Ok, this is now the time to include the CHILDREN in the list
+		this.listrecordsFlat = [];
+	    for (var j=0; j<this.listrecordsfiltered.length; j++){
+			var oneRow = this.listrecordsfiltered[ j ];
+			this.listrecordsFlat.push( oneRow );
+			
+					
+			// children ?
+			for (var k=0;k<listChildren.length;k++) {
+			   var childName = listChildren[ k ];
+			   var childRowList = oneRow[ childName ];
+		
+			   if ( ! (typeof childRowList === 'undefined')) {
+				for (var l=0;l<childRowList.length;l++) {
+					var oneChild = childRowList[ l ];
+					oneChild["prefixchildrenbearwidget"] = childName;
+
+					// we link the toogle to the parent value ? If an header.name exist, type=CHILDREN then do it
+					var controlChildren = listHeaderControlChilden[ childName ];
+					// console.log("==== ControlChildren for childname["+childName+"] ? "+JSON.stringify( controlChildren ));
+					
+					if ( ! (typeof controlChildren === 'undefined'))
+		            {
+						// yes, there are one !
+						// the value must exist in the Parent !
+						if (typeof oneRow[ childName+"_bearwidget"] === 'undefined')
+							oneRow[ childName+"_bearwidget"]=false;
+						oneChild["parenttooglebearwidget"] = oneRow[ childName+"_bearwidget"];
+					}
+					this.listrecordsFlat.push( oneChild );
+				}
+			   }
+			   
+			}
+		}
+		  
+		// console.log(' listrecordsFlat='+angular.toJson(this.listrecordsFlat));
+	    if (this.isShowPagination() )
+	    {
+			// be sure this is not a String
+			this.recorditemsperpage = parseInt( this.recorditemsperpage);
+		    var begin = ((this.recordpagenumber - 1) * this.recorditemsperpage);
+		    var end =  begin + this.recorditemsperpage;
+	        // console.log("Result After Filter begin/end="+begin+"/"+end+":"+ angular.toJson(this.listFlat , true));
+			this.endTime(timeBegin, "getRecordsPage - ShowPagination from begin["+begin+"] to end["+end+"] recorditemsperpage=["+this.recorditemsperpage+"] nblines["+this.listrecordsFlat.length+"]");
+
+    		return this.listrecordsFlat.slice(begin, end);
+	    }
+		this.endTime(timeBegin, "getRecordsPage - listRecordFlats");
+		return this.listrecordsFlat;
+	    
+	}
+	
+   
+	//-------------------------- getter
+	this.getHeader = function( oneRecord ) {
+	    var timeBegin = this.beginTime("getHeader");
+    
+		var prefixRecord="";
+        // alert("getheader oneRecord ="+  JSON.stringify( oneRecord ));
+		
+		// this is the Header itself
+		if (typeof oneRecord !== 'undefined') {
+		  // this is the description of one line. If the prefixchildrenbearwidget exist, this is a Child description.
+	      prefixRecord = oneRecord[ "prefixchildrenbearwidget" ];
+		  
+		
+	      if (typeof prefixRecord =='undefined')
+	        prefixRecord="";
+		}
+		
+		var headerFilter = [];
+		// return all header where there are no . in the name
+		 for (var i=0; i<$scope.properties.headervalue.length; i++){
+	        var header = $scope.properties.headervalue[ i ];
+			var prefixHeader = "";
+			if ( ! (typeof header.parent === 'undefined'))
+				prefixHeader = header.parent;
+				
+			if (prefixHeader === prefixRecord ) {
+				headerFilter.push( header );
+			}
+	    }
+		this.endTime(timeBegin, "getHeader");
+
+		return headerFilter;
+	}
+	this.getCheckRule = function() {
+	    return $scope.properties.checkrules;
+	}
+	this.getOrderByField = function() {
+	    return this.orderByField;
+	}
+	
+	this.isReverseSort = function() {
+	    return this.reverseSort;
+	}
+	
+	this.getTableCss = function () {
+		if (typeof $scope.properties.tablecssclass === 'undefined' || $scope.properties.tablecssclass ==='') {
+			return "table table-striped";
+		}
+			
+	    return $scope.properties.tablecssclass;
+	}
+	
+	this.getStyleCss = function () {
+	    return $scope.properties.tablecssstyle;
+	}
+	// --  setter
+	this.setOrder= function( paramorderfield, paramreversesort)
+	{	
+		this.orderByField = paramorderfield;
+		this.reverseSort = paramreversesort;
+		// console.log("SET Order : ["+this.orderByField+"] order="+this.reverseSort);		
+	}
+	
+	
+    //------------------- init
+    ctrl.diseablePrepareData =false;
+    
+    $scope.$watch('properties.value', function(newValue, oldValue) {
+		var timeBegin = ctrl.beginTime("watch");
+        if (! ctrl.diseablePrepareData)
+        {
+            var prepareDataDone = ctrl.prepareData();
+            ctrl.checkRules();    
+            ctrl.diseablePrepareData =prepareDataDone;
+        }
+		ctrl.endTime(timeBegin, "watch");
+
+    }, true);
+    
+	
+	//-------------------------- performance
+	this.beginTime=function( logMessage )
+	{
+		// console.log("BearWidget.BEGIN "+logMessage);
+		var d = new Date();
+		return d.getTime();
+	}
+
+	this.endTime = function( timeBegin, logMessage )
+	{
+		var d = new Date();
+		var delay= d.getTime() - timeBegin;
+		console.log("BearWidget.END  "+delay+" ms :"+ logMessage);
+	}
+	
+  
+}

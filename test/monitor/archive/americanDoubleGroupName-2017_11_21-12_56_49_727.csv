@@ -1,0 +1,6 @@
+HEADER;GROUP;GroupName;GroupDisplayName;GroupDescription;GroupParentPath
+GROUP;Univar;Univar;;
+GROUP;AG;Antigua/Barbuda-2;AG;Univar
+GROUP;ES;Spain;ES;Univar
+GROUP;Vendor;Vendor;AG-Vendor;/Univar/AG
+GROUP;Vendor;Vendor;ES-Vendor;/Univar/ES
