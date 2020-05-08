@@ -29,12 +29,17 @@ public abstract class Item {
      */
     protected Long bonitaId = null;
 
+    /**
+     * collect the time of one operation to save the item
+     */
+    public long timeOperation;
     public static class StatisticOnItem {
 
         public long nbCreatedItem = 0;
         public long nbUpdatedItem = 0;
         public long nbPurgedItem = 0;
         public HashSet<Long> listKeyItem = new HashSet<Long>();
+        public long totalTimeOperation=0;
     }
 
     /**
@@ -144,7 +149,7 @@ public abstract class Item {
      * @param profileAPI
      * @param organisationLog
      */
-    protected abstract void saveInServer(AmericanOrganizationAPI organizationAccess, ParametersOperation parameterLoad, IdentityAPI identityAPI, ProfileAPI profileAPI, OrganizationLog organisationLog);
+    protected abstract void saveInServer(AmericanOrganizationAPI organizationAccess, BonitaAccessAPI bonitaAccessAPI, ParametersOperation parameterLoad, OrganizationLog organisationLog);
 
     /**
      * keep the fact the item was CREATED or UPDATED in the server

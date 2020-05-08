@@ -142,12 +142,12 @@ public class ItemGroup extends Item {
     /**
      * now do the operation
      */
-    protected void saveInServer(AmericanOrganizationAPI organizationAccess, ParametersOperation parameterLoad, IdentityAPI identityAPI, ProfileAPI profileAPI, OrganizationLog organizationLog) {
+    protected void saveInServer(AmericanOrganizationAPI organizationAccess,BonitaAccessAPI bonitaAccessAPI, ParametersOperation parameterLoad, OrganizationLog organizationLog) {
         GroupCreator groupCreator;
         GroupUpdater groupUpdater;
         boolean allIsOk = true;
         if (itemInformation.get(cstGroupName) == null) {
-            organizationLog.log(true, "OrganizationItemGroup.saveInServer", cstGroupName + " is mandatory");
+            organizationLog.log(true, true, "OrganizationItemGroup.saveInServer", cstGroupName + " is mandatory");
         }
         if (itemInformation.get(cstGroupParentPath) == null)
             itemInformation.put(cstGroupParentPath, "");
@@ -186,16 +186,16 @@ public class ItemGroup extends Item {
 
         // First, the PARENT must exist
         String groupParentPath = itemInformation.get(cstGroupParentPath);
-        if (groupParentPath == null || groupParentPath.length() == 0)
+        if (groupParentPath == null || groupParentPath.length() == 0 || groupParentPath.equals("/"))
             groupParentPath = null;
         if (groupParentPath != null && groupParentPath.length() > 0) {
             try {
                 if (!groupParentPath.startsWith("/") && groupParentPath.length() > 1)
                     groupParentPath = "/" + groupParentPath;
-                Group groupParent = identityAPI.getGroupByPath(groupParentPath);
+                Group groupParent = bonitaAccessAPI.getGroupByPath(groupParentPath, organizationLog);
                 groupParentPath = groupParent.getPath();
             } catch (GroupNotFoundException e1) {
-                organizationLog.log(true, "OrganizationItemGroup.saveInServer", "Parent group Path[" + groupParentPath + "] not found");
+                organizationLog.log(true, true, "OrganizationItemGroup.saveInServer", "Parent group Path[" + groupParentPath + "] not found");
                 allIsOk = false;
             }
         }
@@ -208,7 +208,7 @@ public class ItemGroup extends Item {
             searchOptionsBuilder.filter(GroupSearchDescriptor.NAME, (String) itemInformation.get(cstGroupName));
             searchOptionsBuilder.and();
             searchOptionsBuilder.filter(GroupSearchDescriptor.PARENT_PATH, groupParentPath);
-            SearchResult<Group> searchResult = identityAPI.searchGroups(searchOptionsBuilder.done());
+            SearchResult<Group> searchResult = bonitaAccessAPI.getIdentityAPI().searchGroups(searchOptionsBuilder.done());
             if (searchResult.getCount() > 0)
                 group = searchResult.getResult().get(0);
         } catch (SearchException e1) {
@@ -217,11 +217,11 @@ public class ItemGroup extends Item {
         }
 
         if (group == null && parameterLoad.operationGroups == ParametersOperation.OperationOnItem.UPDATEONLY) {
-            organizationLog.log(false, "OrganizationItemGroup.saveInServer", "Group[" + itemInformation.get(cstGroupName) + "] does not exist and no insert allowed");
+            organizationLog.log(false, true, "OrganizationItemGroup.saveInServer", "Group[" + itemInformation.get(cstGroupName) + "] does not exist and no insert allowed");
             return;
         }
         if (group != null && parameterLoad.operationGroups == ParametersOperation.OperationOnItem.INSERTONLY) {
-            organizationLog.log(false, "OrganizationItemGroup.saveInServer", " Group[" + itemInformation.get(cstGroupName) + "] exist and no update allowed");
+            organizationLog.log(false, true, "OrganizationItemGroup.saveInServer", " Group[" + itemInformation.get(cstGroupName) + "] exist and no update allowed");
             return;
         }
 
@@ -234,13 +234,13 @@ public class ItemGroup extends Item {
                 isCreated = true;
                 groupCreator.setParentPath(groupParentPath); // may be null for the root
 
-                organizationLog.log(false, "OrganizationItemGroup.saveInServer", "Insert Group[" + itemInformation.get(cstGroupName) + "] path[" + groupParentPath + "]");
-                Group groupCreated = identityAPI.createGroup(groupCreator);
+                organizationLog.log(false, true, "OrganizationItemGroup.saveInServer", "Insert Group[" + itemInformation.get(cstGroupName) + "] path[" + groupParentPath + "]");
+                Group groupCreated = bonitaAccessAPI.getIdentityAPI().createGroup(groupCreator);
                 bonitaId = groupCreated.getId();
             } catch (AlreadyExistsException e) {
-                organizationLog.log(true, "OrganizationItemGroup.saveInServer", "Group[" + itemInformation.get(cstGroupName) + "] path[" + groupParentPath + "] already exist with a different path");
+                organizationLog.log(true, true, "OrganizationItemGroup.saveInServer", "Group[" + itemInformation.get(cstGroupName) + "] path[" + groupParentPath + "] already exist with a different path");
             } catch (CreationException e) {
-                organizationLog.log(true, "OrganizationItemGroup.saveInServer", "Group[" + itemInformation.get(cstGroupName) + "] path[" + groupParentPath + "] Error at creation " + e.toString());
+                organizationLog.log(true, true, "OrganizationItemGroup.saveInServer", "Group[" + itemInformation.get(cstGroupName) + "] path[" + groupParentPath + "] Error at creation " + e.toString());
             }
         } else {
             // an update
@@ -252,20 +252,20 @@ public class ItemGroup extends Item {
                 if (!currentParentPath.equals(groupParentPath)) {
                     allIsOk = invokeMethod(groupUpdater, "updateParentPath", groupParentPath, organizationLog);
                     if (!allIsOk) {
-                        organizationLog.log(true, "OrganizationItemGroup.saveInServer", "Group[" + itemInformation.get(cstGroupName) + "] Error at updateParentPath to[" + groupParentPath + "]");
+                        organizationLog.log(true, true, "OrganizationItemGroup.saveInServer", "Group[" + itemInformation.get(cstGroupName) + "] Error at updateParentPath to[" + groupParentPath + "]");
                         return;
                     }
                 }
 
-                organizationLog.log(false, "OrganizationItemGroup.saveInServer", "Update Group[" + itemInformation.get(cstGroupName) + "] Id[" + group.getId() + "]");
-                identityAPI.updateGroup(group.getId(), groupUpdater);
+                organizationLog.log(false, true, "OrganizationItemGroup.saveInServer", "Update Group[" + itemInformation.get(cstGroupName) + "] Id[" + group.getId() + "]");
+                bonitaAccessAPI.getIdentityAPI().updateGroup(group.getId(), groupUpdater);
                 bonitaId = group.getId();
             } catch (GroupNotFoundException e) {
-                organizationLog.log(true, "OrganizationItemGroup.saveInServer", "Group[" + itemInformation.get(cstGroupName) + "] not exist");
+                organizationLog.log(true, true, "OrganizationItemGroup.saveInServer", "Group[" + itemInformation.get(cstGroupName) + "] not exist");
             } catch (UpdateException e) {
-                organizationLog.log(true, "OrganizationItemGroup.saveInServer", "Group[" + itemInformation.get(cstGroupName) + "] Error at update " + e.toString());
+                organizationLog.log(true, true, "OrganizationItemGroup.saveInServer", "Group[" + itemInformation.get(cstGroupName) + "] Error at update " + e.toString());
             } catch (Exception e) {
-                organizationLog.log(true, "OrganizationItemGroup.saveInServer", "Group[" + itemInformation.get(cstGroupName) + "] Error at update " + e.toString());
+                organizationLog.log(true, true, "OrganizationItemGroup.saveInServer", "Group[" + itemInformation.get(cstGroupName) + "] Error at update " + e.toString());
             }
         }
         return;
@@ -288,7 +288,7 @@ public class ItemGroup extends Item {
             if (listGroups.size() == 0)
                 return;
             for (Group group : listGroups) {
-                organizationLog.log(false, "OrganizationItemGroup.photo", " ParentPath[" + group.getParentPath() + "] Path[" + group.getPath() + "] Name[" + group.getName() + "]");
+                organizationLog.log(false, true, "OrganizationItemGroup.photo", " ParentPath[" + group.getParentPath() + "] Path[" + group.getPath() + "] Name[" + group.getName() + "]");
                 // We reference the COMPLETE path (/acme for acme for example)
                 // We must reference the same as the ID
                 statisticOnItemGroup.listKeyItem.add(group.getId());
@@ -307,7 +307,7 @@ public class ItemGroup extends Item {
         try {
             identityAPI.deleteGroups(listIdToDelete);
         } catch (DeletionException e) {
-            organisationLog.log(true, "OrganizationItemGroup.purgeFromList", " Can't delete Groups :" + e.toString());
+            organisationLog.log(true, true, "OrganizationItemGroup.purgeFromList", " Can't delete Groups :" + e.toString());
         }
         statisticOnItemGroup.nbPurgedItem = listIdToDelete.size();
     }
@@ -321,18 +321,18 @@ public class ItemGroup extends Item {
                     Object o = m.invoke(groupUpdater, value);
                     return true;
                 } catch (IllegalAccessException e) {
-                    organizationLog.log(true, "OrganizationItemGroup.saveInServer", methodeName + "[" + value + "] on group[" + itemInformation.get(cstGroupName) + "] failed " + e.toString());
+                    organizationLog.log(true, true, "OrganizationItemGroup.saveInServer", methodeName + "[" + value + "] on group[" + itemInformation.get(cstGroupName) + "] failed " + e.toString());
                     return false;
                 } catch (IllegalArgumentException e) {
-                    organizationLog.log(true, "OrganizationItemGroup.saveInServer", methodeName + "[" + value + "] on group[" + itemInformation.get(cstGroupName) + "] failed " + e.toString());
+                    organizationLog.log(true, true, "OrganizationItemGroup.saveInServer", methodeName + "[" + value + "] on group[" + itemInformation.get(cstGroupName) + "] failed " + e.toString());
                     return false;
                 } catch (InvocationTargetException e) {
-                    organizationLog.log(true, "OrganizationItemGroup.saveInServer", methodeName + "[" + value + "] on group[" + itemInformation.get(cstGroupName) + "] failed " + e.toString());
+                    organizationLog.log(true, true, "OrganizationItemGroup.saveInServer", methodeName + "[" + value + "] on group[" + itemInformation.get(cstGroupName) + "] failed " + e.toString());
                     return false;
                 }
             }
         }
-        organizationLog.log(true, "OrganizationItemGroup.saveInServer", methodeName + "[" + value + "] Method not exist. on group[" + itemInformation.get(cstGroupName) + "]");
+        organizationLog.log(true, true, "OrganizationItemGroup.saveInServer", methodeName + "[" + value + "] Method not exist. on group[" + itemInformation.get(cstGroupName) + "]");
         return false; // method not found
     }
 }

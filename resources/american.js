@@ -103,8 +103,9 @@
 				
 						
 				console.log("refreshfrombtn : PLAY IT");
-
-				var url='?page=custompage_american&action=refresh';
+				var d = new Date();
+				
+				var url='?page=custompage_american&action=refresh&t='+d.getTime();
 				
 				$http.get( url )
 					.success( function (result) {
@@ -220,7 +221,9 @@
 		this.getproperties = function(toast) {
 			var self=this;
 			self.wait=true;
-			$http.get( '?page=custompage_american&action=getproperties' )
+			var d = new Date();
+			
+			$http.get( '?page=custompage_american&action=getproperties&t='+d.getTime() )
 					.success( function ( result ) {
 						self.wait=false;
 						
@@ -274,8 +277,9 @@
 			
 			
 			var json = encodeURI( angular.toJson( this.options, false));
+			var d = new Date();
 			
-			$http.get( '?page=custompage_american&action=setproperties&paramjson='+json )
+			$http.get( '?page=custompage_american&action=setproperties&paramjson='+json+'&t='+d.getTime() )
 				.success( function ( jsonResult ) {
 					self.wait=false;
 					

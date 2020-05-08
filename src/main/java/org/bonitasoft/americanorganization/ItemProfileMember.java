@@ -126,14 +126,14 @@ public class ItemProfileMember extends Item {
     /**
      * 
      */
-    public void saveInServer(AmericanOrganizationAPI organizationAccess, ParametersOperation parameterLoad, IdentityAPI identityAPI, ProfileAPI profileAPI, OrganizationLog organizationLog) {
+    public void saveInServer(AmericanOrganizationAPI organizationAccess,  BonitaAccessAPI bonitaAccessAPI, ParametersOperation parameterLoad, OrganizationLog organizationLog) {
 
-        if (profileAPI == null) {
-            organizationLog.log(true, "ItemProfileMember.saveInServer", "No profileAPI given");
+        if (bonitaAccessAPI.getProfileAPI() == null) {
+            organizationLog.log(true, true, "ItemProfileMember.saveInServer", "No profileAPI given");
             return;
         }
         if (itemInformation.get(cstProfileName) == null) {
-            organizationLog.log(true, "ItemProfileMember.saveInServer", cstProfileName + " is mandatory");
+            organizationLog.log(true, true, "ItemProfileMember.saveInServer", cstProfileName + " is mandatory");
             return;
         }
         User user = null;
@@ -142,52 +142,57 @@ public class ItemProfileMember extends Item {
         Profile profile = null;
         ProfileMemberCreator profileMemberCreator = null;
         try {
-            profile = ItemProfile.getProfileByName(itemInformation.get(cstProfileName), profileAPI, organizationLog);
+            
+            profile = null;
+                    try {
+                        profile = bonitaAccessAPI.getProfileByName(itemInformation.get(cstProfileName), organizationLog);
+                    } catch(Exception e) {}
+                    
             if (profile == null) {
-                organizationLog.log(true, "ItemProfileMember.saveInServer", getLogContextualInformation() + "Profile[" + itemInformation.get(cstProfileName) + "] notFound");
+                organizationLog.log(true, true, "ItemProfileMember.saveInServer", getLogContextualInformation() + "Profile[" + itemInformation.get(cstProfileName) + "] notFound");
                 return;
 
             }
             profileMemberCreator = new ProfileMemberCreator(profile.getId());
             if (itemInformation.get(cstUserName) != null && itemInformation.get(cstUserName).trim().length() > 0 && (!itemInformation.get(cstUserName).equals("-"))) {
-                user = identityAPI.getUserByUserName(itemInformation.get(cstUserName));
+                user = bonitaAccessAPI.getIdentityAPI().getUserByUserName(itemInformation.get(cstUserName));
                 profileMemberCreator.setUserId(user.getId());
             }
             if (itemInformation.get(cstGroupPath) != null && itemInformation.get(cstGroupPath).trim().length() > 0 && (!itemInformation.get(cstGroupPath).equals("-"))) {
-                group = identityAPI.getGroupByPath(itemInformation.get(cstGroupPath));
+                group = bonitaAccessAPI.getGroupByPath( itemInformation.get(cstGroupPath),  organizationLog);
                 profileMemberCreator.setGroupId(group.getId());
             }
 
             if (itemInformation.get(cstRoleName) != null && itemInformation.get(cstRoleName).trim().length() > 0 && (!itemInformation.get(cstRoleName).equals("-"))) {
-                role = identityAPI.getRoleByName(itemInformation.get(cstRoleName));
+                role = bonitaAccessAPI.getRoleByName(itemInformation.get(cstRoleName),  organizationLog);
                 profileMemberCreator.setRoleId(role.getId());
             }
 
-            ProfileMember profileMember = profileAPI.createProfileMember(profileMemberCreator);
+            ProfileMember profileMember = bonitaAccessAPI.getProfileAPI().createProfileMember(profileMemberCreator);
             bonitaId = profileMember.getId();
             isCreated = true;
             if (user != null)
                 organizationAccess.userIsInProfile(user.getId(), profile.getId(), organizationLog);
 
         } catch (RoleNotFoundException e1) {
-            organizationLog.log(true, "ItemProfileMember.saveInServer", "Role[" + itemInformation.get(cstRoleName) + "] notFound");
+            organizationLog.log(true, true, "ItemProfileMember.saveInServer", "Role[" + itemInformation.get(cstRoleName) + "] notFound "+contextualInformation);
         } catch (UserNotFoundException e2) {
-            organizationLog.log(true, "ItemProfileMember.saveInServer", "User[" + itemInformation.get(cstUserName) + "] notFound");
+            organizationLog.log(true, true, "ItemProfileMember.saveInServer", "User[" + itemInformation.get(cstUserName) + "] notFound "+contextualInformation);
         } catch (GroupNotFoundException e) {
-            organizationLog.log(true, "ItemProfileMember.saveInServer", "GroupPath[" + itemInformation.get(cstGroupPath) + "] notFound");
+            organizationLog.log(true, true, "ItemProfileMember.saveInServer", "GroupPath[" + itemInformation.get(cstGroupPath) + "] notFound "+contextualInformation);
         } catch (AlreadyExistsException e) {
             isCreated = false;
             // already exist, so what is the bonitaId ?
-            ProfileMember profileMember = searchProfileMember(profile.getId(), user == null ? null : user.getId(), group == null ? null : group.getId(), role == null ? null : role.getId(), profileAPI, organizationLog);
+            ProfileMember profileMember = searchProfileMember(profile.getId(), user == null ? null : user.getId(), group == null ? null : group.getId(), role == null ? null : role.getId(), bonitaAccessAPI.getProfileAPI(), organizationLog);
             if (profileMember != null)
                 bonitaId = profileMember.getId();
             else
-                organizationLog.log(true, "ItemProfileMember.saveInServer",
-                        "Can't find the profileMember for [" + itemInformation.get(cstProfileName) + "] userName[" + itemInformation.get(cstUserName) + "] Group[" + itemInformation.get(cstGroupPath) + "] Role[" + itemInformation.get(cstRoleName) + "] when its exist because the creation failed");
+                organizationLog.log(true, true,
+                        "ItemProfileMember.saveInServer", "Can't find the profileMember for [" + itemInformation.get(cstProfileName) + "] userName[" + itemInformation.get(cstUserName) + "] Group[" + itemInformation.get(cstGroupPath) + "] Role[" + itemInformation.get(cstRoleName) + "] when its exist because the creation failed "+contextualInformation);
 
         } catch (CreationException e) {
-            organizationLog.log(true, "ItemProfileMember.saveInServer",
-                    "Cant' create ProfileMember on profile[" + itemInformation.get(cstProfileName) + ") userName[" + itemInformation.get(cstUserName) + "] Group[" + itemInformation.get(cstGroupPath) + "] Role[" + itemInformation.get(cstRoleName) + "] Error " + e.toString());
+            organizationLog.log(true, true,
+                    "ItemProfileMember.saveInServer", "Cant' create ProfileMember on profile[" + itemInformation.get(cstProfileName) + ") userName[" + itemInformation.get(cstUserName) + "] Group[" + itemInformation.get(cstGroupPath) + "] Role[" + itemInformation.get(cstRoleName) + "] "+contextualInformation+" Error:" + e.toString());
         }
         return;
     }
@@ -198,9 +203,9 @@ public class ItemProfileMember extends Item {
         try {
             profileAPI.createProfileMember(profileMemberCreator);
         } catch (AlreadyExistsException e) {
-            organizationLog.log(false, "ItemProfileMember.saveInServer", "AlreadyExist ProfileMember on profile[" + profileId + ") userId[" + userId + "]");
+            organizationLog.log(false, true, "ItemProfileMember.saveInServer", "AlreadyExist ProfileMember on profile[" + profileId + ") userId[" + userId + "] ");
         } catch (CreationException e) {
-            organizationLog.log(false, "ItemProfileMember.saveInServer", "Error creation ProfileMember on profile[" + profileId + ") userId[" + userId + "] :" + e.toString());
+            organizationLog.log(false, true, "ItemProfileMember.saveInServer", "Error creation ProfileMember on profile[" + profileId + ") userId[" + userId + "] :" + e.toString());
         }
 
     }
@@ -209,15 +214,14 @@ public class ItemProfileMember extends Item {
      * to manage the purge, two step : register all item first. Then when an
      * item is loaded/updated, the list is reduced. At the end, all pending
      * information must be deleted
-     * 
      * @param statisticOnItemUser
      * @param identityAPI
      * @param organisationLog
      */
 
-    protected static void photoAll(Item.StatisticOnItem statisticOnProfileMember, ParametersOperation parametersLoad, ProfileAPI profileAPI, OrganizationLog organizationLog) {
-        if (profileAPI == null) {
-            organizationLog.log(true, "ItemProfile.saveInServer", "No profileAPI given");
+    protected static void photoAll(Item.StatisticOnItem statisticOnProfileMember, BonitaAccessAPI bonitaAccessAPI, ParametersOperation parametersLoad, OrganizationLog organizationLog) {
+        if (bonitaAccessAPI == null) {
+            organizationLog.log(true, true, "ItemProfile.saveInServer", "No profileAPI given");
             return;
         }
         try {
@@ -231,12 +235,12 @@ public class ItemProfileMember extends Item {
                 // in that case, we MUST not set in the photo the profileMember
                 // from the User profile. Doing that, theses profileMember is
                 // never purge
-                profileToExclude = ItemProfile.getProfileByName(ItemProfile.cstProfileNameUser, profileAPI, organizationLog);
+                profileToExclude = bonitaAccessAPI.getProfileByName(ItemProfile.cstProfileNameUser,  organizationLog);
             }
 
             while (true) {
                 SearchOptionsBuilder searchOption = new SearchOptionsBuilder(index, 1000);
-                SearchResult<ProfileMember> listProfileMembers = profileAPI.searchProfileMembers(memberType[memberTypePos], searchOption.done());
+                SearchResult<ProfileMember> listProfileMembers = bonitaAccessAPI.getProfileAPI().searchProfileMembers(memberType[memberTypePos], searchOption.done());
                 index += 1000;
 
                 for (ProfileMember profileMember : listProfileMembers.getResult()) {
@@ -248,7 +252,7 @@ public class ItemProfileMember extends Item {
                     memberTypePos++;
                     index = 0;
                     if (memberTypePos >= memberType.length) {
-                        organizationLog.log(false, "ItemProfile.photoAll", "List of profileMember found " + statisticOnProfileMember.listKeyItem.toString() + "]");
+                        organizationLog.log(false, true, "ItemProfile.photoAll", "List of profileMember found " + statisticOnProfileMember.listKeyItem.toString() + "]");
                         return;
                     }
                     continue;
@@ -256,14 +260,14 @@ public class ItemProfileMember extends Item {
             }
 
         } catch (SearchException e) {
-            organizationLog.log(true, "ItemProfile.photoAll", "Errorwhen get list of all profile " + e.toString());
+            organizationLog.log(true, true, "ItemProfile.photoAll", "Errorwhen get list of all profile " + e.toString());
         }
     }
 
     /** Purge on the list */
     protected static void purgeFromList(Item.StatisticOnItem statisticOnItemProfileMember, ParametersOperation parametersLoad, ProfileAPI profileAPI, OrganizationLog organizationLog) {
         if (profileAPI == null) {
-            organizationLog.log(true, "ItemProfile.saveInServer", "No profileAPI given");
+            organizationLog.log(true, true, "ItemProfile.saveInServer", "No profileAPI given");
             return;
         }
 
@@ -317,7 +321,7 @@ public class ItemProfileMember extends Item {
                 return profileMember;
             }
         } catch (SearchException e) {
-            organizationLog.log(true, "ItemProfile.searchProfileMember", "Errorwhen get list of profileMember" + e.toString());
+            organizationLog.log(true, true, "ItemProfile.searchProfileMember", "Errorwhen get list of profileMember" + e.toString());
 
         }
         return null;

@@ -132,10 +132,10 @@ public class ItemRole extends Item {
      * 
      */
     @Override
-    protected void saveInServer(AmericanOrganizationAPI organizationAccess, ParametersOperation parameterLoad, IdentityAPI identityAPI, ProfileAPI profileAPI, OrganizationLog organizationLog) {
+    protected void saveInServer(AmericanOrganizationAPI organizationAccess,  BonitaAccessAPI bonitaAccessAPI, ParametersOperation parameterLoad, OrganizationLog organizationLog) {
 
         if (itemInformation.get(cstRoleName) == null) {
-            organizationLog.log(true, "ItemMemberRole.saveInServer", cstRoleName + " is mandatory");
+            organizationLog.log(true, true, "ItemMemberRole.saveInServer", cstRoleName + " is mandatory "+contextualInformation);
             return;
         }
 
@@ -167,17 +167,17 @@ public class ItemRole extends Item {
 
         Role role = null;
         try {
-            role = identityAPI.getRoleByName(itemInformation.get(cstRoleName));
+            role = bonitaAccessAPI.getRoleByName(itemInformation.get(cstRoleName), organizationLog);
         } catch (RoleNotFoundException e1) {
             role = null;
         }
 
         if (role == null && parameterLoad.operationRoles == ParametersOperation.OperationOnItem.UPDATEONLY) {
-            organizationLog.log(false, "ItemMemberRole.saveInServer", "Role[" + itemInformation.get(cstRoleName) + "] does not exists and no insert allowed");
+            organizationLog.log(false, true, "ItemMemberRole.saveInServer", "Role[" + itemInformation.get(cstRoleName) + "] does not exists and no insert allowed "+contextualInformation);
             return;
         }
         if (role != null && parameterLoad.operationRoles == ParametersOperation.OperationOnItem.INSERTONLY) {
-            organizationLog.log(false, "ItemMemberRole.saveInServer", "Role[" + itemInformation.get(cstRoleName) + "] exists and no update allowed");
+            organizationLog.log(false, true, "ItemMemberRole.saveInServer", "Role[" + itemInformation.get(cstRoleName) + "] exists and no update allowed "+contextualInformation);
             return;
         }
 
@@ -185,25 +185,25 @@ public class ItemRole extends Item {
             // a creation
             try {
                 isCreated = true;
-                organizationLog.log(false, "ItemMemberRole.saveInServer", "Insert Role[" + itemInformation.get(cstRoleName) + "]");
-                Role roleCreated = identityAPI.createRole(roleCreator);
+                organizationLog.log(false, true, "ItemMemberRole.saveInServer", "Insert Role[" + itemInformation.get(cstRoleName) + "] "+contextualInformation);
+                Role roleCreated = bonitaAccessAPI.getIdentityAPI().createRole(roleCreator);
                 bonitaId = roleCreated.getId();
             } catch (AlreadyExistsException e) {
-                organizationLog.log(true, "ItemMemberRole.saveInServer", "Role[" + itemInformation.get(cstRoleName) + "] already exist at creation");
+                organizationLog.log(true, true, "ItemMemberRole.saveInServer", "Role[" + itemInformation.get(cstRoleName) + "] already exist at creation "+contextualInformation);
             } catch (CreationException e) {
-                organizationLog.log(true, "ItemMemberRole.saveInServer", "Role[" + itemInformation.get(cstRoleName) + "] Error at creation " + e.toString());
+                organizationLog.log(true, true, "ItemMemberRole.saveInServer", "Role[" + itemInformation.get(cstRoleName) + "] "+contextualInformation+" Error at creation:" + e.toString());
             }
         } else {
             // an update
             try {
                 isCreated = false;
-                organizationLog.log(false, "ItemMemberRole.saveInServer", "Update Role[" + itemInformation.get(cstRoleName) + "] Id[" + role.getId() + "]");
-                identityAPI.updateRole(role.getId(), roleUpdater);
+                organizationLog.log(false, true, "ItemMemberRole.saveInServer", "Update Role[" + itemInformation.get(cstRoleName) + "] Id[" + role.getId() + "] "+contextualInformation);
+                bonitaAccessAPI.getIdentityAPI().updateRole(role.getId(), roleUpdater);
                 bonitaId = role.getId();
             } catch (RoleNotFoundException e) {
-                organizationLog.log(true, "ItemMemberRole.saveInServer", "Role[" + itemInformation.get(cstRoleName) + "] not exist");
+                organizationLog.log(true, true, "ItemMemberRole.saveInServer", "Role[" + itemInformation.get(cstRoleName) + "] not exist "+contextualInformation);
             } catch (UpdateException e) {
-                organizationLog.log(true, "ItemMemberRole.saveInServer", "Role[" + itemInformation.get(cstRoleName) + "] Error at update " + e.toString());
+                organizationLog.log(true, true, "ItemMemberRole.saveInServer", "Role[" + itemInformation.get(cstRoleName) + "] "+contextualInformation+" Error at update " + e.toString());
             }
         }
         return;
@@ -242,7 +242,7 @@ public class ItemRole extends Item {
         try {
             identityAPI.deleteRoles(listIdToDelete);
         } catch (DeletionException e) {
-            organisationLog.log(true, "ItemMemberRole.saveInServer", "Can't delete Roles :" + e.toString());
+            organisationLog.log(true, true, "ItemMemberRole.saveInServer", "Can't delete Roles :" + e.toString());
         }
         statisticOnItemRole.nbPurgedItem = listIdToDelete.size();
     }

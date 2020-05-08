@@ -339,10 +339,10 @@ public class ItemUser extends Item {
      * saveInServer
      */
     @Override
-    protected void saveInServer(final AmericanOrganizationAPI organizationAccess, final ParametersOperation parameterLoad, final IdentityAPI identityAPI, final ProfileAPI profileAPI, final OrganizationLog organizationLog) {
+    protected void saveInServer(final AmericanOrganizationAPI organizationAccess,  BonitaAccessAPI bonitaAccessAPI, final ParametersOperation parameterLoad, final OrganizationLog organizationLog) {
 
         if (itemInformation.get(cstUserName) == null || itemInformation.get(cstUserName).length() == 0) {
-            organizationLog.log(true, "ItemMemberUser.saveInServer", cstUserName + " is mandatory, ");
+            organizationLog.log(true, true, "ItemMemberUser.saveInServer", cstUserName + " is mandatory, "+contextualInformation);
             return;
         }
 
@@ -386,16 +386,16 @@ public class ItemUser extends Item {
         if (itemInformation.get(cstUserManagerUserName) != null && itemInformation.get(cstUserManagerUserName).length() > 0) {
             User user;
             try {
-                user = identityAPI.getUserByUserName(itemInformation.get(cstUserManagerUserName));
+                user = bonitaAccessAPI.getIdentityAPI().getUserByUserName(itemInformation.get(cstUserManagerUserName));
 
                 if (user == null) {
-                    organizationLog.log(true, "ItemMemberUser.saveInServer", "Manager [" + itemInformation.get(cstUserManagerUserName) + "] of user [" + itemInformation.get(cstUserName) + "] not found");
+                    organizationLog.log(true, true, "ItemMemberUser.saveInServer", "Manager [" + itemInformation.get(cstUserManagerUserName) + "] of user [" + itemInformation.get(cstUserName) + "] not found "+contextualInformation);
                 } else {
                     userCreator.setManagerUserId(user.getId());
                     userUpdator.setManagerId(user.getId());
                 }
             } catch (final UserNotFoundException e) {
-                organizationLog.log(true, "ItemMemberUser.saveInServer", getLogContextualInformation() + "Manager [" + itemInformation.get(cstUserManagerUserName) + "] of user [" + itemInformation.get(cstUserName) + "] :" + e.toString());
+                organizationLog.log(true, true, "ItemMemberUser.saveInServer", getLogContextualInformation() + "Manager [" + itemInformation.get(cstUserManagerUserName) + "] of user [" + itemInformation.get(cstUserName) + "] " +contextualInformation+" Error:"+ e.toString());
             }
         }
 
@@ -415,17 +415,17 @@ public class ItemUser extends Item {
         String logItemOperation = "User [" + itemInformation.get(cstUserName) + "] ";
         boolean logItemLevelError = false;
         try {
-            user = identityAPI.getUserByUserName(itemInformation.get(cstUserName));
+            user = bonitaAccessAPI.getIdentityAPI().getUserByUserName(itemInformation.get(cstUserName));
         } catch (final UserNotFoundException e1) {
             user = null;
         }
 
         if (user == null && parameterLoad.operationUsers == ParametersOperation.OperationOnItem.UPDATEONLY) {
-            organizationLog.log(false, "ItemMemberUser.saveInServer", "User[" + itemInformation.get(cstUserName) + "] does not exist and no insert allowed");
+            organizationLog.log(false, true, "ItemMemberUser.saveInServer", "User[" + itemInformation.get(cstUserName) + "] does not exist and no insert allowed "+contextualInformation);
             return;
         }
         if (user != null && parameterLoad.operationUsers == ParametersOperation.OperationOnItem.INSERTONLY) {
-            organizationLog.log(false, "ItemMemberUser.saveInServer", "User[" + itemInformation.get(cstUserName) + "] not exist and no update allowed");
+            organizationLog.log(false, true, "ItemMemberUser.saveInServer", "User[" + itemInformation.get(cstUserName) + "] not exist and no update allowed "+contextualInformation);
             return;
         }
 
@@ -434,28 +434,32 @@ public class ItemUser extends Item {
             try {
                 isCreated = true;
                 logItemOperation += "Insert ";
-                final User userCreated = identityAPI.createUser(userCreator);
+                final User userCreated = bonitaAccessAPI.getIdentityAPI().createUser(userCreator);
                 bonitaId = userCreated.getId();
                 // now, do the registration policy
                 if (parameterLoad.registerNewUserInProfileUser == RegisterNewUserInProfile.ALWAYSUSERPROFILE) {
                     logItemOperation += "Register in profile[" + ItemProfile.cstProfileNameUser + "]";
-                    organizationAccess.registerInUserProfile(userCreated.getId(), profileAPI, organizationLog);
+                    try {
+                    organizationAccess.registerInUserProfile(userCreated.getId(), bonitaAccessAPI, organizationLog);
+                    } catch(Exception e ) {
+                        organizationLog.log(true, true, ItemUser.class.getName(), "Can't register userId["+userCreated.getId()+"] in default profile");
+                    }
                 } else if (parameterLoad.registerNewUserInProfileUser == RegisterNewUserInProfile.USERPROFILEIFNOTREGISTER) {
                     logItemOperation += "Register to check profile existance";
-                    organizationAccess.registerInUserProfileIfNeeded(userCreated.getId(), profileAPI, organizationLog);
+                    organizationAccess.registerInUserProfileIfNeeded(userCreated.getId(), bonitaAccessAPI, organizationLog);
                 }
 
             } catch (final AlreadyExistsException e) {
-                organizationLog.log(true, "ItemMemberUser.saveInServer", "User[" + itemInformation.get(cstUserName) + "] already exist");
+                organizationLog.log(true, true, "ItemMemberUser.saveInServer", "User[" + itemInformation.get(cstUserName) + "] already exist "+contextualInformation);
             } catch (final CreationException e) {
-                organizationLog.log(true, "ItemMemberUser.saveInServer", "User[" + itemInformation.get(cstUserName) + "] Error at creation " + e.toString());
+                organizationLog.log(true, true, "ItemMemberUser.saveInServer", "User[" + itemInformation.get(cstUserName) + "] "+contextualInformation+"Error at creation:" + e.toString());
             }
         } else {
             // an update
             try {
                 isCreated = false;
                 logItemOperation += "Update userId[" + user.getId() + "]";
-                identityAPI.updateUser(user.getId(), userUpdator);
+                bonitaAccessAPI.getIdentityAPI().updateUser(user.getId(), userUpdator);
                 bonitaId = user.getId();
 
             } catch (final UserNotFoundException e) {
@@ -466,7 +470,7 @@ public class ItemUser extends Item {
                 logItemLevelError = true;
             }
         }
-        organizationLog.log(logItemLevelError, "ItemMemberUser.saveInServer", getLogContextualInformation() + logItemOperation);
+        organizationLog.log(logItemLevelError, true, "ItemMemberUser.saveInServer", getLogContextualInformation() + logItemOperation);
         return;
     }
 
@@ -559,7 +563,7 @@ public class ItemUser extends Item {
                 return;
             }
             for (final User user : listUsers) {
-                organisationLog.log(false, "OrganizationItemUser.photo", " User[" + user.getUserName() + "]");
+                organisationLog.log(false, true, "OrganizationItemUser.photo", " User[" + user.getUserName() + "]");
                 // We reference the same as the ID
                 statisticOnItemUser.listKeyItem.add(user.getId());
             }
@@ -580,7 +584,7 @@ public class ItemUser extends Item {
         try {
             identityAPI.deleteUsers(listIdToDelete);
         } catch (final DeletionException e) {
-            organisationLog.log(true, "OrganizationItemGroup.purgeFromList", " Can't delete Groups :" + e.toString());
+            organisationLog.log(true, true, "OrganizationItemGroup.purgeFromList", " Can't delete Groups :" + e.toString());
         }
         statisticOnItemUser.nbPurgedItem = listIdToDelete.size();
     }

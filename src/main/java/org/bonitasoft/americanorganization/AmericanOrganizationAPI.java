@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 import org.bonitasoft.americanorganization.ParametersOperation.RegisterNewUserInProfile;
 import org.bonitasoft.americanorganization.csv.impl.OrganizationSourceCSV;
 import org.bonitasoft.engine.api.IdentityAPI;
+import org.bonitasoft.engine.exception.SearchException;
 import org.bonitasoft.engine.identity.OrganizationExportException;
 import org.bonitasoft.engine.profile.Profile;
 import org.bonitasoft.engine.profile.ProfileCriterion;
@@ -35,7 +36,7 @@ import com.bonitasoft.engine.api.ProfileAPI;
 // https://docs.google.com/a/bonitasoft.com/document/d/1z_k-T1vH984ZFIak6uR1CagGXmQrqPO_u7EumgHhLXE/edit
 public class AmericanOrganizationAPI {
 
-    public static Logger logger = Logger.getLogger("com.bonitasoft.organization.OrganizationAPI");
+    public static Logger logger = Logger.getLogger(AmericanOrganizationAPI.class.getName());
 
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
@@ -50,9 +51,9 @@ public class AmericanOrganizationAPI {
     public AmericanOrganizationAPI(IdentityAPI identityAPI, ProfileAPI profileAPI) {
         this.identityAPI = identityAPI;
         this.profileAPI = profileAPI;
+        
     }
 
-    // Ou placer le XML dans un studio ?
     /**
      * return
      * 
@@ -64,7 +65,7 @@ public class AmericanOrganizationAPI {
     public List<Map<String, String>> saveOrganizationFromDir(String sourceDirectory, String archiveDirectory, ParametersOperation parametersLoad) {
 
         OrganizationLog organisationLog = new OrganizationLog(parametersLoad.logInfo);
-        ArrayList<Map<String, String>> listStatusLoad = new ArrayList<Map<String, String>>();
+        ArrayList<Map<String, String>> listStatusLoad = new ArrayList<>();
 
         // organisationLog.log(false,
         // "OrganizationAccess.saveOrganizationFromDir:", "look directory [" +
@@ -75,31 +76,44 @@ public class AmericanOrganizationAPI {
         // organisationLog.log(false,
         // "OrganizationAccess.saveOrganizationFromDir:", "found [" +
         // filesList.length + "] files");
+        StringBuilder analyseContentDirectory = new StringBuilder();
         int countNbFilesDetected = 0;
+        String prefix=null;
         for (File file : filesList) {
 
-            HashMap<String, String> statusLoad = new HashMap<String, String>();
+            HashMap<String, String> statusLoad = new HashMap<>();
             String status = "";
             String errors = "";
             try {
-                if (!file.isFile() || !file.getName().endsWith(".csv")) {
-                    // organisationLog.log(false,
-                    // "OrganizationAccess.saveOrganizationFromDir:", "ignore
-                    // file[" + file.getName() + "]");
+                prefix = checkFileReadyToProcess(file,analyseContentDirectory);
 
+                if (prefix == null)
                     continue;
-                }
-                countNbFilesDetected++;
+
                 // organisationLog.log(false,
                 // "OrganizationAccess.saveOrganizationFromDir:", "Files found["
                 // + file.getCanonicalPath() + "]");
+                String fileName = file.getCanonicalPath();
+                String fileNameWithoutPrefix = fileName.substring(0, fileName.length() - (prefix.length()));
 
-                statusLoad.put(cstActionName, "Handle Archive \"" + file.getCanonicalPath() + "\"");
+                // Tag the file name, to be sure two thread does not process then at the same time
+                File newfile = new File(fileNameWithoutPrefix + CST_TAGINPROGRESS + prefix);
+
+                if (file.renameTo(newfile)) {
+                    file = newfile;
+                } else {
+                    analyseContentDirectory.append("Can't rename file to " + newfile.getAbsolutePath() + "] Don't process it;");
+                    organisationLog.log(false, true, "OrganizationAccess.saveOrganizationFromDir:", "Can't rename file to " + newfile.getAbsolutePath() + "] Don't process it");
+                    continue;
+                }
+
+                countNbFilesDetected++;
+                statusLoad.put(cstActionName, "Handle Archive [" + fileName + "]");
                 statusLoad.put(cstActionTimeStamp, sdf.format(new Date()));
 
-                organisationLog.log(false, "OrganizationAccess.saveOrganizationFromDir:", " Manage deployment with options " + parametersLoad.getInfos());
+                organisationLog.log(false, false, "OrganizationAccess.saveOrganizationFromDir:", " Manage deployment with options " + parametersLoad.getInfos());
                 OrganizationIntSource organizationSource = null;
-                if (file.getName().endsWith(".csv")) {
+                if (prefix.equals(".csv")) {
                     organizationSource = new OrganizationSourceCSV();
                     ((OrganizationSourceCSV) organizationSource).loadFromFile(file.getCanonicalPath(), null);
                 } else {
@@ -116,7 +130,10 @@ public class AmericanOrganizationAPI {
                 status += "+ is created,~ is modified, - is deleted;";
                 for (String item : statistics.keySet()) {
                     Item.StatisticOnItem oneStats = statistics.get(item);
-                    status += "(" + item + ":+" + oneStats.nbCreatedItem + " ~" + oneStats.nbUpdatedItem + " -" + oneStats.nbPurgedItem + "),";
+                    status += "(" + item + ": +" + oneStats.nbCreatedItem + " ~ " + oneStats.nbUpdatedItem + " - " + oneStats.nbPurgedItem + " in " + oneStats.totalTimeOperation + " ms ";
+                    if (oneStats.nbCreatedItem + oneStats.nbUpdatedItem + oneStats.nbPurgedItem > 0)
+                        status += " average " + (oneStats.totalTimeOperation / (oneStats.nbCreatedItem + oneStats.nbUpdatedItem + oneStats.nbPurgedItem)) + " ms";
+                    status += "),";
                 }
                 status += organizationLog.getLog();
                 errors += organizationLog.getErrors();
@@ -125,20 +142,20 @@ public class AmericanOrganizationAPI {
                 e.printStackTrace(new PrintWriter(sw));
                 String exceptionDetails = sw.toString();
 
-                organisationLog.log(true, "OrganizationAccess.saveOrganizationFromDir:", "Error on deployment " + e.toString() + " at " + exceptionDetails);
+                organisationLog.log(true, true, "OrganizationAccess.saveOrganizationFromDir:", "Error on deployment " + e.toString() + " at " + exceptionDetails);
                 errors += "Failure during import;";
             }
 
-            // now move the path to the output directory
+            // now move the file to the output directory
             try {
-                organisationLog.log(false, "OrganizationAccess.saveOrganizationFromDir:", "Move file now");
+                organisationLog.log(false, true, "OrganizationAccess.saveOrganizationFromDir:", "Move file now");
 
                 String completeFileName = file.getCanonicalPath();
                 String outputFileName = file.getName();
                 Calendar c = Calendar.getInstance();
-                outputFileName = outputFileName.replace(".csv", "");
+                outputFileName = outputFileName.replace(prefix, "");
                 outputFileName = archiveDirectory + "/" + outputFileName + "-" + c.get(Calendar.YEAR) + "_" + (c.get(Calendar.MONTH) + 1) + "_" + c.get(Calendar.DAY_OF_MONTH) + "-" + c.get(Calendar.HOUR_OF_DAY) + "_" + c.get(Calendar.MINUTE) + "_" + +c.get(Calendar.SECOND) + "_"
-                        + c.get(Calendar.MILLISECOND) + ".csv";
+                        + c.get(Calendar.MILLISECOND) + prefix;
 
                 File outputFile = new File(outputFileName);
                 outputFile.createNewFile();
@@ -156,23 +173,23 @@ public class AmericanOrganizationAPI {
                     outStream.write(buffer, 0, length);
                 }
 
-                organisationLog.log(false, "OrganizationAccess.saveOrganizationFromDir:", "#################################### Copy finish, now delete");
+                organisationLog.log(false, true, "OrganizationAccess.saveOrganizationFromDir:", "#################################### Copy finish, now delete");
                 inStream.close();
 
                 outStream.close();
                 System.gc();
-                organisationLog.log(false, "OrganizationAccess.saveOrganizationFromDir:", "and then delete file [" + file.getCanonicalPath() + "]");
+                organisationLog.log(false, true, "OrganizationAccess.saveOrganizationFromDir:", "and then delete file [" + file.getCanonicalPath() + "]");
                 File fileToDelete = new File(completeFileName);
                 try {
                     boolean fileDelete = fileToDelete.delete();
-                    organisationLog.log(false, "OrganizationAccess.saveOrganizationFromDir:", "file deleted[" + completeFileName + "] : " + fileDelete);
+                    organisationLog.log(false, true, "OrganizationAccess.saveOrganizationFromDir:", "file deleted[" + completeFileName + "] : " + fileDelete);
                 } catch (Exception e) {
-                    organisationLog.log(true, "OrganizationAccess.saveOrganizationFromDir:", "American.groovy: error during delete " + e.toString());
+                    organisationLog.log(true, true, "OrganizationAccess.saveOrganizationFromDir:", "American.groovy: error during delete " + e.toString());
                 }
 
                 status += "File move to archive;";
             } catch (Exception e) {
-                organisationLog.log(true, "OrganizationAccess.saveOrganizationFromDir:", "American.groovy: error during move " + e.toString());
+                organisationLog.log(true, true, "OrganizationAccess.saveOrganizationFromDir:", "American.groovy: error during move " + e.toString());
                 status += "Done but cannot move the archive to the output folder";
             }
 
@@ -185,11 +202,12 @@ public class AmericanOrganizationAPI {
             // actionResult.put("name", "name");
             // actionResult.put("timestamp", "time");
 
-            organisationLog.log(false, "OrganizationAccess.saveOrganizationFromDir:", "American ends one file:" + status);
+            organisationLog.log(false, true, "OrganizationAccess.saveOrganizationFromDir:", "American ends one file:" + status);
+
         }
         if (countNbFilesDetected == 0) {
-            HashMap<String, String> statusLoad = new HashMap<String, String>();
-            statusLoad.put(cstActionStatus, "No files detected");
+            HashMap<String, String> statusLoad = new HashMap<>();
+            statusLoad.put(cstActionStatus, "No files detected "+analyseContentDirectory.toString());
             statusLoad.put(cstActionName, "");
             statusLoad.put(cstActionTimeStamp, sdf.format(new Date()));
 
@@ -227,7 +245,8 @@ public class AmericanOrganizationAPI {
         // OR keep the list of loaded/updated item, and at the end, load all
         // elements and then compare
         // the first solution is easiest to develop.
-
+        BonitaAccessAPI bonitaAccessAPI = new BonitaAccessAPI(profileAPI, identityAPI);
+        
         // User
         Item.StatisticOnItem statisticOnItemUser = new Item.StatisticOnItem();
         if (parametersLoad.purgeUsers)
@@ -259,19 +278,38 @@ public class AmericanOrganizationAPI {
 
         Item.StatisticOnItem statisticOnItemProfileMember = new Item.StatisticOnItem();
         if (parametersLoad.purgeProfileMember)
-            ItemProfileMember.photoAll(statisticOnItemProfileMember, parametersLoad, profileAPI, organizationLog);
+            ItemProfileMember.photoAll(statisticOnItemProfileMember, bonitaAccessAPI, parametersLoad, organizationLog);
         loadedItem.put(ItemProfileMember.cstItemName, statisticOnItemProfileMember);
 
+        int countItem = 0;
+        int numberOfItems = source.getNumberOfItems(organizationLog);
+        organizationLog.log(false, false, AmericanOrganizationAPI.class.getName(), "Start load organization NumberOfItems="+numberOfItems);
+
+        long previousPackageTime=0;
+        long start = System.currentTimeMillis();
         // now load
         try {
             source.initInput(organizationLog);
             Item organisationItem = null;
             do {
                 organisationItem = source.getNextItem(organizationLog);
+                countItem++;
+                if (countItem % 1000 == 0) {
+                    long currentTime=System.currentTimeMillis();
+                    String info= "Load in progress " + countItem + "/" + numberOfItems + " in " + (currentTime - start) + " ms";
+                    if (previousPackageTime!=0)
+                        info+= " Last 1000 items in "+(currentTime-previousPackageTime)+" ms";
+                    previousPackageTime = currentTime;
+                    organizationLog.log(false, false, AmericanOrganizationAPI.class.getName(), info);
+                    source.traceAdvancement( countItem, numberOfItems,info, organizationLog );
+                }
                 if (organisationItem != null) {
-                    organisationItem.saveInServer(this, parametersLoad, identityAPI, profileAPI, organizationLog);
+                    long startItem = System.currentTimeMillis();
+                    organisationItem.saveInServer(this, bonitaAccessAPI, parametersLoad, organizationLog);
+                    organisationItem.timeOperation = System.currentTimeMillis() - startItem;
                     registerItem(organisationItem, parametersLoad, organizationLog);
                 }
+
             } while (organisationItem != null);
 
             /**
@@ -280,7 +318,7 @@ public class AmericanOrganizationAPI {
              */
             if (parametersLoad.registerNewUserInProfileUser == RegisterNewUserInProfile.USERPROFILEIFNOTREGISTER) {
                 for (Long userId : registerMaybeInUserProfile)
-                    registerInUserProfile(userId, profileAPI, organizationLog);
+                    registerInUserProfile(userId, bonitaAccessAPI, organizationLog);
             }
             /**
              * now check the purge, item per item First, user and membership
@@ -301,10 +339,19 @@ public class AmericanOrganizationAPI {
                 ItemProfileMember.purgeFromList(loadedItem.get(ItemProfileMember.cstItemName), parametersLoad, profileAPI, organizationLog);
 
         } catch (Exception e) {
-            organizationLog.log(true, "OrganizationAccess.saveOrganization:", " in Error " + e.toString());
+            organizationLog.log(true, true, "OrganizationAccess.saveOrganization:", " in Error " + e.toString());
         } catch (Error er) {
-            organizationLog.log(true, "OrganizationAccess.saveOrganization:", " in Error " + er.toString());
+            organizationLog.log(true, true, "OrganizationAccess.saveOrganization:", " in Error " + er.toString());
         }
+        
+        // close the source now
+        try {
+            source.endInput(organizationLog);
+        } catch (Exception e) {
+            organizationLog.log(true, true, "OrganizationAccess.saveOrganization:", "Error during close the source "+ e.toString());
+
+        }
+
         return organizationLog;
     }
 
@@ -317,16 +364,17 @@ public class AmericanOrganizationAPI {
      * @param userId
      * @param profileAPI
      * @param organizationLog
+     * @throws Exception 
      */
-    protected void registerInUserProfile(long userId, ProfileAPI profileAPI, OrganizationLog organizationLog) {
+    protected void registerInUserProfile(long userId, BonitaAccessAPI bonitaAccessAPI, OrganizationLog organizationLog) throws SearchException {
         if (userProfileId == null) {
-            Profile profile = ItemProfile.getProfileByName(ItemProfile.cstProfileNameUser, profileAPI, organizationLog);
+            Profile profile = bonitaAccessAPI.getProfileByName(ItemProfile.cstProfileNameUser, organizationLog);
             userProfileId = profile == null ? null : profile.getId();
         }
 
         // is the user is in one profile ?
         List<Profile> listProfile = profileAPI.getProfilesForUser(userId, 0, 10, ProfileCriterion.ID_DESC);
-        if (listProfile.size() == 0) {
+        if (listProfile.isEmpty()) {
             // register the user in the userProfile
             ItemProfileMember.registerUserInProfile(userId, userProfileId, profileAPI, organizationLog);
         }
@@ -340,7 +388,7 @@ public class AmericanOrganizationAPI {
      * @param profileAPI
      * @param organizationLog
      */
-    protected void registerInUserProfileIfNeeded(long userId, ProfileAPI profileAPI, OrganizationLog organizationLog) {
+    protected void registerInUserProfileIfNeeded(long userId, BonitaAccessAPI bonitaAccessAPI, OrganizationLog organizationLog) {
         registerMaybeInUserProfile.add(userId);
     }
 
@@ -348,7 +396,7 @@ public class AmericanOrganizationAPI {
         registerMaybeInUserProfile.remove(userId);
     }
 
-    private HashMap<String, Item.StatisticOnItem> loadedItem = new HashMap<String, Item.StatisticOnItem>();
+    private HashMap<String, Item.StatisticOnItem> loadedItem = new HashMap<>();
 
     /**
      * if the control is to PURGE all element, then we need to keep in memory
@@ -367,6 +415,7 @@ public class AmericanOrganizationAPI {
             statisticOnItem.nbCreatedItem++;
         else
             statisticOnItem.nbUpdatedItem++;
+        statisticOnItem.totalTimeOperation += organisationItem.timeOperation;
         loadedItem.put(organisationItem.getTypeItem(), statisticOnItem);
 
         // remove in the list : all item at the end is entity at begining and
@@ -417,12 +466,12 @@ public class AmericanOrganizationAPI {
             fileoutput.close();
 
         } catch (OrganizationExportException e) {
-            organisationLog.log(true, "OrganizationAccess.getOrganizationOnXml", "Error " + e.toString());
+            organisationLog.log(true, true, "OrganizationAccess.getOrganizationOnXml", "Error " + e.toString());
             return;
         } catch (FileNotFoundException e) {
-            organisationLog.log(true, "OrganizationAccess.getOrganizationOnXml", "Error " + e.toString());
+            organisationLog.log(true, true, "OrganizationAccess.getOrganizationOnXml", "Error " + e.toString());
         } catch (IOException e) {
-            organisationLog.log(true, "OrganizationAccess.getOrganizationOnXml", "Error " + e.toString());
+            organisationLog.log(true, true, "OrganizationAccess.getOrganizationOnXml", "Error " + e.toString());
         }
     }
 
@@ -549,4 +598,39 @@ public class AmericanOrganizationAPI {
 
         return configuration;
     }
+
+    private final static String CST_TAGINPROGRESS = "_INPROGRESS";
+    private String[] listFilePrefix = new String[] { ".csv" };
+
+    /**
+     * check the file, return null or the prefix to process the file
+     * 
+     * @param file
+     * @return
+     */
+    private String checkFileReadyToProcess(File file, StringBuilder analyseContentDirectory) {
+        String prefixSelected = null;
+        for (String prefix : listFilePrefix) {
+
+            if (!file.isFile() || !file.getName().endsWith(prefix)) {
+                // organisationLog.log(false,
+                // "OrganizationAccess.saveOrganizationFromDir:", "ignore
+                // file[" + file.getName() + "]");
+
+                continue;
+            }
+            // is the file in progress ? 
+            if (file.getName().endsWith(CST_TAGINPROGRESS + prefix)) {
+                analyseContentDirectory.append(" ["+file.getName()+"] in progress;");
+                return null;
+            }
+            // ok, we get one
+            return prefix;
+        }
+        analyseContentDirectory.append(" ["+file.getName()+"] unknow prefix;");
+        return null;
+
+    }
+    
+ 
 }

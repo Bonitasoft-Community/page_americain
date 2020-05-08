@@ -23,18 +23,22 @@ public class OrganizationLog {
      * Log an information.
      * 
      * @param isError
+     * @param isDebug TODO
      * @param origine
      *        the className where the log is sent
      * @param log
      *        the message
      */
-    public void log(boolean isError, String origine, String log) {
-        if (!isError && !collectInfo)
+    public void log(boolean isError, boolean isDebug, String origine, String log) {
+        if (isDebug && !collectInfo)
             return; // ignore
 
         if (isError) {
             logErrorsBuffer.append(origine + ":" + log + "\n");
             logger.severe(origine + ":" + log);
+        } else if (isDebug){
+            logBuffer.append(origine + ":" + log + "\n");
+            logger.fine(origine + ":" + log);
         } else {
             logBuffer.append(origine + ":" + log + "\n");
             logger.info(origine + ":" + log);

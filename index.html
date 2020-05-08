@@ -68,7 +68,7 @@
 
 	<center>
 	<table><tr><td><h1>American</h1></td><td rowspan="2"><img src="pageResource?page=custompage_american&location=img/american.jpg" width="150" heigth="150" /></td></tr>
-		<tr><td style="font-size:0.8em"> <a href="" ng-click="mainctrl.showhistory( ! mainctrl.isshowhistory )">V1.6</a></td></tr>
+		<tr><td style="font-size:0.8em"> <a href="" ng-click="mainctrl.showhistory( ! mainctrl.isshowhistory )">V1.7.1</a></td></tr>
 		<tr><td>
 		<div id="showHistory" ng-show="mainctrl.isshowhistory" style="border-width:2px;border-style:ridge;border-color:blue">
 		1.0 March 2015 First version<br>
@@ -78,6 +78,7 @@
 		1.4 Wildfly ready, accept ;; at the end of the line, use 7.5 library
 		1.5 Allow 2 groups with the same name, not on the same hierarchy
 		1.6 maven architecture
+		1.7 Fix typo in example, add refresh in all REST CALL
 		</td></tr>
 		</div>
 	</table>
@@ -287,14 +288,21 @@
 						<div id="exampleCsv" style="border-width:2px;border-style:ridge;border-color:blue;word-wrap: break-word;">
 	HEADER;ROLE;RoleName;RoleDescription;RoleDisplayName;RoleIconName;RoleIconPath<br>
 	HEADER;USER;UserName;UserPassword;UserEnable;UserFirstName; UserLastName;UserIconName;UserIconPath;UserTitle;UserJobTitle;UserManagerUserName;PROContactAddress;PROContactBuilding;PROContactCity;PROContactCountry;PROContactEmail;PROContactFaxNumber;PROContactMobileNumber;PROContactPhoneNumber;PROContactRoom;PROContactState;PROContactWebsite;PROContactZipCode;PERContactAddress;PERContactBuilding;PERContactCity;PERContactCountry;PERContactEmail;PERContactFaxNumber;PERContactMobileNumber;PERContactPhoneNumber;PERContactRoom;PERContactState;PERContactWebsite; PERContactZipCode<<br>
-	HEADER;GROUP;GroupName;GroupDescription;GroupDisplayName;GroupIconName;GroupIconPath;GroupParentPath<br>
+	HEADER;GROUP;GroupName;GroupDescription;GroupDisplayName;GroupParentPath;GroupIconName;GroupIconPath<br>
 	HEADER;MEMBERSHIP;UserName;RoleName;GroupPath<br>
-	HEARDER;PROFILE;ProfileName;ProfileDescription<br>
-	HEARDER;PROFILEMEMBER;ProfileName;UserName;RoleName;GroupPath<br>
+	HEADER;PROFILE;ProfileName;ProfileDescription<br>
+	HEADER;PROFILEMEMBER;ProfileName;UserName;RoleName;GroupPath<br>
 	# data now<br>
 	# ------------- user<br>
 	USER;Francis.Huster;bpm;True;Francis;Huster;Huster.gif;c:/tmp;Docteur;Artist;Walter.Bates;Gaumont;Immeuble Carmenia;Paris;France;francis.huster@gaumont.fr;FaxFaumont;06 501 501;01 501 501;Room 51;Ile de France;http://gaumont.fr/huster;75000;Rte Chambery;Charmette;Le versoud;Italie;francis.huster@laposte.net;Fax Perso;06 443 553;04 32 33 22;Room du haut;California;http://Francis.Huster;94706<br>
 	USER;Walter.Bates;bpm;True;Walter;Bates;Huster.gif;c:/tmp;Docteur;Artist;Walter.Bates;Gaumont;Immeuble Carmenia;Paris;France;francis.huster@gaumont.fr;FaxFaumont;06 501 501;01 501 501;Room 51;Ile de France;http://gaumont.fr/huster;75000;Rte Chambery;Charmette;Le versoud;Italie;francis.huster@laposte.net;Fax Perso;06 443 553;04 32 33 22;Room du haut;California;http://Francis.Huster;94706<br>
+	# ------------- Role<br>
+	ROLE;QualManager;Manager,in charge of all aspect of the quality;Quality Manager ;<br>
+	# ------------- Group<br>
+	GROUP;SoftProd;Production for internal software;Software Production;/acme<br>
+	# ------------- Membership<br>
+	MEMBERSHIP;Walter.Bates;QualManager;SoftProd<br>
+	
 
 						</div>					
 						

@@ -95,14 +95,14 @@ public class OrganizationSourceJson implements OrganizationIntSource {
 
     public Item getNextItem(final OrganizationLog organizationLog) {
         // retrieve the current item
-        if (listItemInProgress.size() > 0) {
+        if (! listItemInProgress.isEmpty()) {
             final Item item = listItemInProgress.get(0);
             listItemInProgress.remove(0);
             return item;
         }
         final boolean checkNextItem = true;
         while (checkNextItem) {
-            organizationLog.log(false, "com.twosigma.bonitasoft.organization.json.impl", "counterTypeItem[" + counterTypeItem + "]->[" + listItems[counterTypeItem] + "] PageRank[" + pageRank + "]");
+            organizationLog.log(false, true, "com.twosigma.bonitasoft.organization.json.impl", "counterTypeItem[" + counterTypeItem + "]->[" + listItems[counterTypeItem] + "] PageRank[" + pageRank + "]");
             // pageRank = -1 means the current item is finish
             if (pageRank == -1) {
                 counterTypeItem++;
@@ -113,7 +113,7 @@ public class OrganizationSourceJson implements OrganizationIntSource {
             }
             getItems(listItems[counterTypeItem], organizationLog);
 
-            if (listItemInProgress.size() > 0) {
+            if (listItemInProgress.isEmpty()) {
                 break; // we have data !
             }
             if (pageRank == -1) {
@@ -127,7 +127,7 @@ public class OrganizationSourceJson implements OrganizationIntSource {
             listItemInProgress.remove(0);
             return item;
         }
-        organizationLog.log(false, "com.twosigma.bonitasoft.organization.json.impl", "That's all for the JSON input !");
+        organizationLog.log(false, true, "com.twosigma.bonitasoft.organization.json.impl", "That's all for the JSON input !");
         return null;
     }
 
@@ -173,19 +173,19 @@ public class OrganizationSourceJson implements OrganizationIntSource {
                         final Map<String, String> oneItemAttributes = (Map) jsonLine;
                         final Item organizationItem = Item.getInstance(currentItem);
                         final String report = organizationItem.setAttributes(oneItemAttributes, organizationLog);
-                        listItem.add(organizationItem);
+                        listItemInProgress.add(organizationItem);
                     } else {
-                        organizationLog.log(true, "com.twosigma.bonitasoft.organization.json.impl.OrganizationSourceJson", "Item[" + currentItem + "]:We expect a Map on each line : found " + (jsonLine == null ? "null" : jsonLine.getClass().getName()));
+                        organizationLog.log(true, true, OrganizationSourceJson.class.getName(), "Item[" + currentItem + "]:We expect a Map on each line : found " + (jsonLine == null ? "null" : jsonLine.getClass().getName()));
                     }
                 }
 
             } else {
-                organizationLog.log(true, "com.twosigma.bonitasoft.organization.json.impl.OrganizationSourceJson", "Item[" + currentItem + "]:We expect a List of Map " + (jsonList == null ? "null" : jsonList.getClass().getName()));
+                organizationLog.log(true, true, OrganizationSourceJson.class.getName(), "Item[" + currentItem + "]:We expect a List of Map " + (jsonList == null ? "null" : jsonList.getClass().getName()));
             }
             // in any case, add the page rank
             pageRank++;
         } catch (final IOException e) {
-            organizationLog.log(true, "com.twosigma.bonitasoft.organization.json.impl.OrganizationSourceJson", "Item[" + currentItem + "]:Error at reading : " + e.toString());
+            organizationLog.log(true, true, OrganizationSourceJson.class.getName(), "Item[" + currentItem + "]:Error at reading : " + e.toString());
             pageRank = -1; // stop to read this item
         }
     }
@@ -221,7 +221,7 @@ public class OrganizationSourceJson implements OrganizationIntSource {
             urlConn.connect();
             final int responseCode = urlConn.getResponseCode();
             if (responseCode != 200) {
-                organizationLog.log(true, "com.twosigma.bonitasoft.organization.json.impl.OrganizationSourceJson", "Response[" + responseCode + "] Can't use connection[" + urlLoginAddress + "]");
+                organizationLog.log(true, true, "com.twosigma.bonitasoft.organization.json.impl.OrganizationSourceJson", "Response[" + responseCode + "] Can't use connection[" + urlLoginAddress + "]");
                 return false;
             }
 
@@ -235,10 +235,10 @@ public class OrganizationSourceJson implements OrganizationIntSource {
              */
             return true;
         } catch (final MalformedURLException e) {
-            organizationLog.log(true, "com.twosigma.bonitasoft.organization.json.impl.OrganizationSourceJson", "Can't use connection[" + urlLoginAddress + "] : " + e.toString());
+            organizationLog.log(true, true, "com.twosigma.bonitasoft.organization.json.impl.OrganizationSourceJson", "Can't use connection[" + urlLoginAddress + "] : " + e.toString());
 
         } catch (final IOException e) {
-            organizationLog.log(true, "com.twosigma.bonitasoft.organization.json.impl.OrganizationSourceJson", "Can't use connection[" + urlLoginAddress + "] : " + e.toString());
+            organizationLog.log(true, true, "com.twosigma.bonitasoft.organization.json.impl.OrganizationSourceJson", "Can't use connection[" + urlLoginAddress + "] : " + e.toString());
 
         }
         return false;
@@ -288,4 +288,24 @@ public class OrganizationSourceJson implements OrganizationIntSource {
         return sb.toString();
     }
 
+    @Override
+    public int getNumberOfItems(OrganizationLog organizationLog) {
+        int totalItems=0;
+    
+        for (String item : listItems) {
+            pageRank=0;
+           int loop=0;
+            do {
+                loop++;
+                listItemInProgress.clear();
+                getItems(item, organizationLog);
+                totalItems += listItemInProgress.size();
+            } while (! listItemInProgress.isEmpty() || loop > 1000);
+        }
+        return totalItems;
+        
+                
+    }
+    public void traceAdvancement( int countItem, int numberOfItems, String logInformation, OrganizationLog organizationLog) 
+    {};
 }

@@ -1,7 +1,9 @@
 package org.bonitasoft.americanorganization.csv.impl;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
@@ -47,6 +49,7 @@ public class OrganizationSourceCSV implements OrganizationIntSource {
      */
     public void initInput(final OrganizationLog organizationLog) throws Exception {
         try {
+            organizationLog.log(false, false, OrganizationSourceCSV.class.getName(), "Start Load ["+fileName+"]");
             fileinputStream = new FileInputStream(new File(fileName));
             final InputStreamReader inputStreamReader = new InputStreamReader(fileinputStream, encoding == null ? "ISO-8859-1" : encoding);
 
@@ -56,7 +59,7 @@ public class OrganizationSourceCSV implements OrganizationIntSource {
             currentLineNumber = 0;
             logReport = new StringBuffer();
             moveNextLine(organizationLog);
-            describeStructureCsv = new HashMap<String, ArrayList<String>>();
+            describeStructureCsv = new HashMap<>();
 
             while (currentLine != null && (currentLine.startsWith("HEADER;") || currentLine.startsWith("#"))) {
                 if (currentLine.startsWith("#")) {
@@ -158,7 +161,7 @@ public class OrganizationSourceCSV implements OrganizationIntSource {
                 }
             }
             if (overFlow) {
-                organizationLog.log(true, "OrganizationSourceCSV", "Line [" + currentLine + "] too much data on the line. Wait " + structureOneLine.size() + " : decoding " + contentOneItem.toString());
+                organizationLog.log(true, true, "OrganizationSourceCSV", "Line [" + currentLine + "] too much data on the line. Wait " + structureOneLine.size() + " : decoding " + contentOneItem.toString());
             }
 
             // ok, create the Item
@@ -192,9 +195,17 @@ public class OrganizationSourceCSV implements OrganizationIntSource {
         if (fileinputStream != null) {
             try {
                 fileinputStream.close();
+                
             } catch (final IOException e) {
                 logTheLoad(true, e.toString(), organizationLog);
             }
+            // remove the trace file
+            try {
+            File fileLog = new File(fileName+".log");
+            fileLog.delete();
+            } catch (final Exception e) {}
+            
+            
         }
     }
 
@@ -224,8 +235,38 @@ public class OrganizationSourceCSV implements OrganizationIntSource {
      * @param report
      */
     private void logTheLoad(final boolean isError, final String report, final OrganizationLog organizationLog) {
-        organizationLog.log(isError, "OrganizationSourceCSV.logTheLoad", "Line [" + currentLineNumber + "] : " + report);
+        organizationLog.log(isError, true, "OrganizationSourceCSV.logTheLoad", "Line [" + currentLineNumber + "] : " + report);
 
     }
 
+    @Override
+    public int getNumberOfItems(OrganizationLog organizationLog) {
+        try (FileInputStream fileinputStream = new FileInputStream(new File(fileName))) {
+
+            final InputStreamReader inputStreamReader = new InputStreamReader(fileinputStream, encoding == null ? "ISO-8859-1" : encoding);
+
+            lineNumberReader = new LineNumberReader(inputStreamReader);
+
+            int linenumber = 0;
+
+            while (lineNumberReader.readLine() != null) {
+                linenumber++;
+            }
+            return linenumber;
+        } catch (Exception e) {
+            logTheLoad(true, e.toString(), organizationLog);
+            return 0;
+        }
+    }
+
+    public void traceAdvancement( int countItem, int numberOfItems, String logInformation, OrganizationLog organizationLog) {
+        try (FileWriter writer = new FileWriter(fileName+".log");
+                BufferedWriter bw = new BufferedWriter(writer)) {
+
+               bw.write("Already process:"+countItem+" / "+numberOfItems+" "+logInformation);
+
+           } catch (IOException e) {
+               logTheLoad(true, e.toString(), organizationLog);
+           }
+    }
 }

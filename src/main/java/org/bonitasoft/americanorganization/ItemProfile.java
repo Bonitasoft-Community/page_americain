@@ -116,14 +116,10 @@ public class ItemProfile extends Item {
      * 
      */
     @Override
-    protected void saveInServer(AmericanOrganizationAPI organizationAccess, ParametersOperation parameterLoad, IdentityAPI identityAPI, ProfileAPI profileAPI, OrganizationLog organizationLog) {
+    protected void saveInServer(AmericanOrganizationAPI organizationAccess, BonitaAccessAPI bonitaAccessAPI, ParametersOperation parameterLoad, OrganizationLog organizationLog) {
 
-        if (profileAPI == null) {
-            organizationLog.log(true, "ItemProfile.saveInServer", "No profileAPI given");
-            return;
-        }
         if (itemInformation.get(cstProfileName) == null) {
-            organizationLog.log(true, "ItemProfile.saveInServer", cstProfileName + " is mandatory");
+            organizationLog.log(true, true, "ItemProfile.saveInServer", cstProfileName + " is mandatory: " + contextualInformation);
             return;
         }
 
@@ -137,15 +133,18 @@ public class ItemProfile extends Item {
 
         if (parameterLoad.operationRoles == ParametersOperation.OperationOnItem.NONE)
             return;
-
-        Profile profile = getProfileByName(itemInformation.get(cstProfileName), profileAPI, organizationLog);
+        Profile profile = null;
+        try {
+            profile = bonitaAccessAPI.getProfileByName(itemInformation.get(cstProfileName), organizationLog);
+        } catch (Exception e) {
+        }
 
         if (profile == null && parameterLoad.operationProfiles == ParametersOperation.OperationOnItem.UPDATEONLY) {
-            organizationLog.log(false, "ItemMemberProfile.saveInServer", "Profile[" + itemInformation.get(cstProfileName) + "] does not exists and no insert allowed");
+            organizationLog.log(false, true, "ItemMemberProfile.saveInServer", "Profile[" + itemInformation.get(cstProfileName) + "] does not exists and no insert allowed " + contextualInformation);
             return;
         }
         if (profile != null && parameterLoad.operationProfiles == ParametersOperation.OperationOnItem.INSERTONLY) {
-            organizationLog.log(false, "ItemMemberProfile.saveInServer", "profile[" + itemInformation.get(cstProfileName) + "] exists and no update allowed");
+            organizationLog.log(false, true, "ItemMemberProfile.saveInServer", "profile[" + itemInformation.get(cstProfileName) + "] exists and no update allowed " + contextualInformation);
             return;
         }
 
@@ -153,27 +152,27 @@ public class ItemProfile extends Item {
             // a creation
             try {
                 isCreated = true;
-                organizationLog.log(false, "ItemMemberProfile.saveInServer", "Insert profile[[" + itemInformation.get(cstProfileName) + "]");
-                Profile profileCreated = profileAPI.createProfile(profileCreator);
+                organizationLog.log(false, true, "ItemMemberProfile.saveInServer", "Insert profile[[" + itemInformation.get(cstProfileName) + "] " + contextualInformation);
+                Profile profileCreated = bonitaAccessAPI.getProfileAPI().createProfile(profileCreator);
                 bonitaId = profileCreated.getId();
             } catch (AlreadyExistsException e) {
-                organizationLog.log(true, "ItemMemberProfile.saveInServer", "profile[[" + itemInformation.get(cstProfileName) + "] already exist at creation");
+                organizationLog.log(true, true, "ItemMemberProfile.saveInServer", "profile[[" + itemInformation.get(cstProfileName) + "] already exist at creation " + contextualInformation);
             } catch (CreationException e) {
-                organizationLog.log(true, "ItemMemberProfile.saveInServer", "Role[" + itemInformation.get(cstProfileName) + "] Error at creation " + e.toString());
+                organizationLog.log(true, true, "ItemMemberProfile.saveInServer", "Role[" + itemInformation.get(cstProfileName) + "] " + contextualInformation + " Error at creation " + e.toString());
             }
         } else {
             // an update
             try {
                 isCreated = false;
-                organizationLog.log(false, "ItemProfile.saveInServer", "Update profile[" + itemInformation.get(cstProfileName) + "] Id[" + profile.getId() + "]");
-                profileAPI.updateProfile(profile.getId(), profileUpdater);
+                organizationLog.log(false, true, "ItemProfile.saveInServer", "Update profile[" + itemInformation.get(cstProfileName) + "] Id[" + profile.getId() + "] " + contextualInformation);
+                bonitaAccessAPI.getProfileAPI().updateProfile(profile.getId(), profileUpdater);
                 bonitaId = profile.getId();
             } catch (AlreadyExistsException e) {
-                organizationLog.log(true, "ItemProfile.saveInServer", "profile[" + itemInformation.get(cstProfileName) + "] override an existing profile");
+                organizationLog.log(true, true, "ItemProfile.saveInServer", "profile[" + itemInformation.get(cstProfileName) + "] override an existing profile " + contextualInformation);
             } catch (UpdateException e) {
-                organizationLog.log(true, "ItemProfile.saveInServer", "profile[" + itemInformation.get(cstProfileName) + "] Error at update " + e.toString());
+                organizationLog.log(true, true, "ItemProfile.saveInServer", "profile[" + itemInformation.get(cstProfileName) + "] " + contextualInformation + " Error at update:" + e.toString());
             } catch (ProfileNotFoundException e) {
-                organizationLog.log(true, "ItemProfile.saveInServer", "profile[" + itemInformation.get(cstProfileName) + "] not exist");
+                organizationLog.log(true, true, "ItemProfile.saveInServer", "profile[" + itemInformation.get(cstProfileName) + "] not exist " + contextualInformation);
             }
         }
 
@@ -191,7 +190,7 @@ public class ItemProfile extends Item {
      */
     public static void photoAll(Item.StatisticOnItem statisticOnItemRole, ProfileAPI profileAPI, OrganizationLog organizationLog) {
         if (profileAPI == null) {
-            organizationLog.log(true, "ItemProfile.saveInServer", "No profileAPI given");
+            organizationLog.log(true, true, "ItemProfile.saveInServer", "No profileAPI given");
             return;
         }
         try {
@@ -207,19 +206,19 @@ public class ItemProfile extends Item {
                         statisticOnItemRole.listKeyItem.add(profile.getId());
                 }
                 if (listProfiles.getCount() < 1000) {
-                    organizationLog.log(false, "ItemProfile.photoAll", "List of profiles found " + statisticOnItemRole.listKeyItem.toString() + "]");
+                    organizationLog.log(false, true, "ItemProfile.photoAll", "List of profiles found " + statisticOnItemRole.listKeyItem.toString() + "]");
                     return;
                 }
             }
 
         } catch (SearchException e) {
-            organizationLog.log(true, "ItemProfile.photoAll", "Errorwhen get list of all profile " + e.toString());
+            organizationLog.log(true, true, "ItemProfile.photoAll", "Errorwhen get list of all profile " + e.toString());
         }
     }
 
     public static void purgeFromList(Item.StatisticOnItem statisticOnItemRole, ParametersOperation parametersLoad, ProfileAPI profileAPI, OrganizationLog organizationLog) {
         if (profileAPI == null) {
-            organizationLog.log(true, "ItemProfile.saveInServer", "No profileAPI given");
+            organizationLog.log(true, true, "ItemProfile.saveInServer", "No profileAPI given");
             return;
         }
         // all elements in the list should be clean. ATTENTION, clean member too
@@ -227,32 +226,10 @@ public class ItemProfile extends Item {
             try {
                 profileAPI.deleteProfile(profileId);
             } catch (DeletionException e) {
-                organizationLog.log(true, "ItemProfile.saveInServer", "Can't delete profile[" + profileId + "] " + e.toString());
+                organizationLog.log(true, true, "ItemProfile.saveInServer", "Can't delete profile[" + profileId + "] " + e.toString());
             }
         }
         statisticOnItemRole.nbPurgedItem = statisticOnItemRole.listKeyItem.size();
-    }
-
-    /**
-     * get profile by name
-     * 
-     * @param profileName
-     * @param profileAPI
-     * @param organisationLog
-     * @return
-     */
-    protected static Profile getProfileByName(String profileName, ProfileAPI profileAPI, OrganizationLog organisationLog) {
-        try {
-            SearchOptionsBuilder searchOption = new SearchOptionsBuilder(0, 100);
-            searchOption.filter(ProfileSearchDescriptor.NAME, profileName);
-            SearchResult<Profile> listProfiles = profileAPI.searchProfiles(searchOption.done());
-            if (listProfiles.getCount() == 0)
-                return null;
-            return listProfiles.getResult().get(0);
-        } catch (Exception e) {
-            organisationLog.log(true, "ItemProfile.getprofileByName", "Error during search profile[" + profileName + "] " + e.toString());
-            return null;
-        }
     }
 
 }

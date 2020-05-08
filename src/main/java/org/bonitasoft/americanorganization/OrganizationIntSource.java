@@ -28,5 +28,9 @@ public interface OrganizationIntSource {
      * end the input of the data
      */
     public void endInput(OrganizationLog organizationLog) throws Exception;
+    
+    public int getNumberOfItems(OrganizationLog organizationLog);
+    
+    public void traceAdvancement( int countItem, int numberOfItems, String logInformation, OrganizationLog organizationLog);
 
 }

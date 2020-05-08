@@ -115,44 +115,44 @@ public class ItemMembership extends Item {
     /**
      * 
      */
-    public void saveInServer(AmericanOrganizationAPI organizationAccess, ParametersOperation parameterLoad, IdentityAPI identityAPI, ProfileAPI profileAPI, OrganizationLog organizationLog) {
+    public void saveInServer(AmericanOrganizationAPI organizationAccess, BonitaAccessAPI bonitaAccessAPI, ParametersOperation parameterLoad, OrganizationLog organizationLog) {
 
         if (itemInformation.get(cstUserName) == null) {
-            organizationLog.log(true, "ItemMemberShip.saveInServer", cstUserName + " is mandatory");
+            organizationLog.log(true, true, "ItemMemberShip.saveInServer", cstUserName + " is mandatory: "+contextualInformation);
             return;
         }
         if (itemInformation.get(cstGroupPath) == null) {
-            organizationLog.log(true, "ItemMemberShip.saveInServer", cstGroupPath + " is mandatory");
+            organizationLog.log(true, true, "ItemMemberShip.saveInServer", cstGroupPath + " is mandatory:"+contextualInformation);
             return;
         }
         if (itemInformation.get(cstRoleName) == null) {
-            organizationLog.log(true, "ItemMemberShip.saveInServer", cstRoleName + " is mandatory");
+            organizationLog.log(true, true, "ItemMemberShip.saveInServer", cstRoleName + " is mandatory:"+contextualInformation);
             return;
         }
         User user = null;
         Group group = null;
         Role role = null;
         try {
-            user = identityAPI.getUserByUserName(itemInformation.get(cstUserName));
-            group = identityAPI.getGroupByPath(itemInformation.get(cstGroupPath));
-            role = identityAPI.getRoleByName(itemInformation.get(cstRoleName));
-            identityAPI.addUserMembership(user.getId(), group.getId(), role.getId());
+            user = bonitaAccessAPI.getIdentityAPI().getUserByUserName(itemInformation.get(cstUserName));
+            group = bonitaAccessAPI.getGroupByPath(itemInformation.get(cstGroupPath), organizationLog);
+            role = bonitaAccessAPI.getRoleByName(itemInformation.get(cstRoleName), organizationLog);
+            bonitaAccessAPI.getIdentityAPI().addUserMembership(user.getId(), group.getId(), role.getId());
             isCreated = true;
 
         } catch (RoleNotFoundException e1) {
-            organizationLog.log(true, "ItemMemberShip.saveInServer", "Role[" + itemInformation.get(cstRoleName) + "] notFound");
+            organizationLog.log(true, true, "ItemMemberShip.saveInServer", "Role[" + itemInformation.get(cstRoleName) + "] notFound "+contextualInformation);
         } catch (UserNotFoundException e2) {
-            organizationLog.log(true, "ItemMemberShip.saveInServer", "User[" + itemInformation.get(cstUserName) + "] notFound");
+            organizationLog.log(true, true, "ItemMemberShip.saveInServer", "User[" + itemInformation.get(cstUserName) + "] notFound " +contextualInformation);
         } catch (GroupNotFoundException e) {
-            organizationLog.log(true, "ItemMemberShip.saveInServer", "GroupPath[" + itemInformation.get(cstGroupPath) + "] notFound");
+            organizationLog.log(true, true, "ItemMemberShip.saveInServer", "GroupPath[" + itemInformation.get(cstGroupPath) + "] notFound " +contextualInformation);
         } catch (AlreadyExistsException e) {
             isCreated = false;
-            UserMembership userMembership = searchMemberships(user.getId(), group.getId(), role.getId(), identityAPI);
+            UserMembership userMembership = searchMemberships(user.getId(), group.getId(), role.getId(), bonitaAccessAPI.getIdentityAPI());
             if (userMembership != null)
                 bonitaId = userMembership.getId();
 
         } catch (CreationException e) {
-            organizationLog.log(true, "ItemMemberShip.saveInServer", "Cant' create User[" + itemInformation.get(cstUserName) + "] Group[" + itemInformation.get(cstGroupPath) + "] Role[" + itemInformation.get(cstRoleName) + "] Error " + e.toString());
+            organizationLog.log(true, true, "ItemMemberShip.saveInServer", "Cant' create User[" + itemInformation.get(cstUserName) + "] Group[" + itemInformation.get(cstGroupPath) + "] Role[" + itemInformation.get(cstRoleName) + "] "+contextualInformation+" Error " + e.toString());
         }
         return;
     }
@@ -174,7 +174,7 @@ public class ItemMembership extends Item {
                 List<User> listUsers = identityAPI.getUsers(index, 1000, UserCriterion.USER_NAME_ASC);
                 index += 1000;
                 if (listUsers.size() == 0) {
-                    organisationLog.log(false, "ItemMemberShip.photoAll", "List of membership found " + statisticOnItemMembership.listKeyItem.toString() + "]");
+                    organisationLog.log(false, true, "ItemMemberShip.photoAll", "List of membership found " + statisticOnItemMembership.listKeyItem.toString() + "]");
                     return;
                 }
 
@@ -192,7 +192,7 @@ public class ItemMembership extends Item {
                 }
             }
         } catch (Exception e) {
-            organisationLog.log(true, "ItemProfile.photoAll", "Errorwhen get list of all profile " + e.toString());
+            organisationLog.log(true, true, "ItemProfile.photoAll", "Errorwhen get list of all profile " + e.toString());
         }
 
     }
@@ -202,7 +202,7 @@ public class ItemMembership extends Item {
             try {
                 identityAPI.deleteUserMembership(membership);
             } catch (DeletionException e) {
-                organisationLog.log(true, "OrganizationItemGroup.purgeFromList", " Can't delete Groups :" + e.toString());
+                organisationLog.log(true, true, "OrganizationItemGroup.purgeFromList", " Can't delete Groups:" + e.toString());
             }
         }
     }
