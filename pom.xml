@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.bonitasoft.custompage</groupId>
 	<artifactId>CustomPageAmerican</artifactId>
-	<version>1.7.1</version>
+	<version>1.8</version>
 	<properties>
 		<!-- <bonitaversion>7.2.4</bonitaversion> -->
 		<!-- <bonitaversion>7.5.4</bonitaversion> -->
