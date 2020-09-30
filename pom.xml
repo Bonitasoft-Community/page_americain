@@ -1,8 +1,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.bonitasoft.custompage</groupId>
-	<artifactId>CustomPageAmerican</artifactId>
-	<version>1.8</version>
+	<groupId>org.bonitasoft.custompage</groupId>
+	<artifactId>bonita-american</artifactId>
+	<version>1.8.1</version>
 	<properties>
 		<!-- <bonitaversion>7.2.4</bonitaversion> -->
 		<!-- <bonitaversion>7.5.4</bonitaversion> -->
@@ -30,12 +30,12 @@
 		<dependency>
 			<groupId>org.bonitasoft.log.event</groupId>
 			<artifactId>bonita-event</artifactId>
-			<version>1.8.0</version>
+			<version>1.9.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.bonitasoft.properties</groupId>
 			<artifactId>bonita-properties</artifactId>
-			<version>2.3.0</version>
+			<version>2.7.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.googlecode.json-simple</groupId>
@@ -53,7 +53,7 @@
 		<dependency>
 			<groupId>org.bonitasoft.store</groupId>
 			<artifactId>bonita-store</artifactId>
-			<version>1.1.0</version>
+			<version>2.3.0</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
