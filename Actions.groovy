@@ -93,7 +93,12 @@ public class Actions {
             }
             actionAnswer.isManaged=true;
 			
-	            
+            //Make sure no action is executed if the CSRF protection is active and the request header is invalid
+            if (! TokenValidator.checkCSRFToken(request, response)) {
+                 actionAnswer.isResponseMap=false;
+                 return actionAnswer;
+             }
+         
 	        ArrayList<HashMap<String, Object>> actions = new ArrayList<HashMap<String, Object>>();
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
             if("getproperties".equals(action)) {
@@ -254,22 +259,26 @@ public class Actions {
 				}
 				
 				if (completeUploadFile.length() == 0 && (new File(completeUploadFile)).exists()) {
-					actionResult.put("status", "Error: an error occurred during the upload request");
+                    actionResult.put("status", "Error");
+					actionResult.put("explanation", "Error: an error occurred during the upload request");
 				} else {
 					try {
 						if(completeUploadFile.endsWith(".csv")) {
 							FileUtils.copyFile(new File(completeUploadFile), new File(configuration.getDropZone() + File.separator + uploadedFileName));
 						} else {
-							actionResult.put("status", "Error: The uploaded file \"" + uploadedFile + "\" is not taken into account as it is not a CSV file");
+                            actionResult.put("status", "Error");
+							actionResult.put("explanation", "Error: The uploaded file \"" + uploadedFileName + "\" is not taken into account as it is not a CSV file");
 						}
 						
 						(new File(completeUploadFile)).delete();
 						
 						if(uploadedFile.endsWith(".csv")) {
-							actionResult.put("status", "The Source file \"" + uploadedFile + "\" has been uploaded in the Monitor directory ["+configuration.getDropZone()+"]");
+                            actionResult.put("status", "Success");
+							actionResult.put("explanation", "The Source file \"" + uploadedFileName + "\" has been uploaded in the Monitor directory ["+configuration.getDropZone()+"]");
 						}
 					} catch(Exception e) {
-						actionResult.put("status", "Error: The Source file \"" + uploadedFile + "\" has not been uploaded in the archive directory due to execution error "+e.toString());
+                        actionResult.put("status", "Error");
+                        actionResult.put("explanation", "Error: The Source file \"" + uploadedFileName + "\" has not been uploaded in the archive directory due to execution error "+e.toString());
 					}
 				}
 

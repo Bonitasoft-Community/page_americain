@@ -13,11 +13,11 @@
 <title>American</title>
 <meta name="description" content="">
 <meta name="viewport" content="width=device-width">
-<link rel="stylesheet"	href="pageResource?page=custompage_american&location=style/animate.css" />
-<link rel="stylesheet"	href="pageResource?page=custompage_american&location=style/bootstrap.min.css">
-<link rel="stylesheet"	href="pageResource?page=custompage_american&location=style/main.css">
-<link rel="stylesheet"	href="pageResource?page=custompage_american&location=css/toaster.css" />
-<link rel="stylesheet"	href="pageResource?page=custompage_american&location=css/dropbox.css" />
+<link rel="stylesheet"	href="style/animate.css" />
+<link rel="stylesheet"	href="style/bootstrap.min.css">
+<link rel="stylesheet"	href="style/main.css">
+<link rel="stylesheet"	href="css/toaster.css" />
+<link rel="stylesheet"	href="css/dropbox.css" />
 	
 <style>
 .Loading {
@@ -43,7 +43,7 @@
 		//forceLoad: true, html5: false //to debug flash in HTML5 browsers
 		//wrapInsideDiv: true, //experimental for fixing css issues
 		//only one of jsPath or jsUrl.
-		//jsPath: '/js/FileAPI.min.js/folder/', 
+		//jsPath: '/3rd-party/FileAPI.min.js/folder/', 
 		//jsUrl: 'yourcdn.com/js/FileAPI.min.js',
 
 		//only one of staticPath or flashUrl.
@@ -51,36 +51,24 @@
 		//flashUrl: 'yourcdn.com/js/FileAPI.flash.swf'
 		};
 	</script>
-	<script	src="pageResource?page=custompage_american&location=3rd-party/jquery.min.js"></script>
-	<script	src="pageResource?page=custompage_american&location=3rd-party/angular.min.js"></script>
-	<script	src="pageResource?page=custompage_american&location=3rd-party/angular-resource.min.js"></script>
-	<script	src="pageResource?page=custompage_american&location=3rd-party/angular-cookies.min.js"></script>
-	<script	src="pageResource?page=custompage_american&location=3rd-party/bootstrap/js/bootstrap.min.js"></script>
-	<script	src="pageResource?page=custompage_american&location=3rd-party/angular-bootstrap-tpls.min.js"></script>
-	<script	src="pageResource?page=custompage_american&location=3rd-party/angular-timer.js"></script>
-	<script	src="pageResource?page=custompage_american&location=js/angular-animate.min.js"></script>
-	<script	src="pageResource?page=custompage_american&location=js/toaster.js"></script>
-	<script	src="pageResource?page=custompage_american&location=american.js"></script>
-	<script	src="pageResource?page=custompage_american&location=js/angular-file-upload-shim.min.js"></script>
-	<script	src="pageResource?page=custompage_american&location=js/angular-file-upload.min.js"></script>
+	<script	src="3rd-party/jquery.min.js"></script>
+	<script	src="3rd-party/angular.min.js"></script>
+	<script	src="3rd-party/angular-resource.min.js"></script>
+	<script	src="3rd-party/angular-cookies.min.js"></script>
+	<script	src="3rd-party/bootstrap/js/bootstrap.min.js"></script>
+	<script	src="3rd-party/angular-bootstrap-tpls.min.js"></script>
+	<script	src="3rd-party/angular-timer.js"></script>
+	<script	src="3rd-party/angular-animate.min.js"></script>
+	<script	src="3rd-party/toaster.js"></script>
+	<script	src="american.js"></script>
+	<script	src="3rd-party/angular-file-upload-shim.min.js"></script>
+	<script	src="3rd-party/angular-file-upload.min.js"></script>
 		
 	<div class="bs-component"  ng-controller="MainController as mainctrl">
 
 	<center>
-	<table><tr><td><h1>American</h1></td><td rowspan="2"><img src="pageResource?page=custompage_american&location=img/american.jpg" width="150" heigth="150" /></td></tr>
-		<tr><td style="font-size:0.8em"> <a href="" ng-click="mainctrl.showhistory( ! mainctrl.isshowhistory )">V1.8</a></td></tr>
-		<tr><td>
-		<div id="showHistory" ng-show="mainctrl.isshowhistory" style="border-width:2px;border-style:ridge;border-color:blue">
-		1.0 March 2015 First version<br>
-		1.1 March 2015 Add Profile User policy for new users
-		1.2 Sept 2017 Compliance 7.5 / refresh may be automatic or manual / save properties using BoniteProperties
-		1.3 Fix toaster message on upload
-		1.4 Wildfly ready, accept ;; at the end of the line, use 7.5 library
-		1.5 Allow 2 groups with the same name, not on the same hierarchy
-		1.6 maven architecture
-		1.7 Fix typo in example, add refresh in all REST CALL
-		1.8 Ready for 7.11
-		</td></tr>
+	<table><tr><td><h1>American</h1></td><td rowspan="2"><img src="img/american.jpg" width="150" heigth="150" /></td></tr>
+		<tr><td style="font-size:0.8em"> V1.9</td></tr>
 		</div>
 	</table>
 	</center>

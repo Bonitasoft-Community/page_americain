@@ -2,7 +2,6 @@ package org.bonitasoft.americanorganization;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,17 +35,19 @@ import com.bonitasoft.engine.api.ProfileAPI;
 // https://docs.google.com/a/bonitasoft.com/document/d/1z_k-T1vH984ZFIak6uR1CagGXmQrqPO_u7EumgHhLXE/edit
 public class AmericanOrganizationAPI {
 
-    public static Logger logger = Logger.getLogger(AmericanOrganizationAPI.class.getName());
+    private static final String ORGANIZATION_ACCESS_SAVE_ORGANIZATION = "OrganizationAccess.saveOrganization:";
+
+    public final static Logger logger = Logger.getLogger(AmericanOrganizationAPI.class.getName());
 
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
     private IdentityAPI identityAPI;
     private ProfileAPI profileAPI;
 
-    public final static String cstActionErrors = "errors";
-    public final static String cstActionStatus = "status";
-    public final static String cstActionName = "name";
-    public final static String cstActionTimeStamp = "timestamp";
+    public final static String CSTACTION_ERRORS = "errors";
+    public final static String CSTACTION_STATUS = "status";
+    public final static String CSTACTION_NAME = "name";
+    public final static String CSTACTION_TIMESTAMP = "timestamp";
 
     public AmericanOrganizationAPI(IdentityAPI identityAPI, ProfileAPI profileAPI) {
         this.identityAPI = identityAPI;
@@ -80,10 +81,11 @@ public class AmericanOrganizationAPI {
         int countNbFilesDetected = 0;
         String prefix=null;
         for (File file : filesList) {
-
+            if (file.isDirectory())
+                continue; // ignore directory
             HashMap<String, String> statusLoad = new HashMap<>();
-            String status = "";
-            String errors = "";
+            StringBuffer status = new StringBuffer();
+            StringBuffer errors = new StringBuffer();
             try {
                 prefix = checkFileReadyToProcess(file,analyseContentDirectory);
 
@@ -108,8 +110,8 @@ public class AmericanOrganizationAPI {
                 }
 
                 countNbFilesDetected++;
-                statusLoad.put(cstActionName, "Handle Archive [" + fileName + "]");
-                statusLoad.put(cstActionTimeStamp, sdf.format(new Date()));
+                statusLoad.put(CSTACTION_NAME, "Handle Archive [" + fileName + "]");
+                statusLoad.put(CSTACTION_TIMESTAMP, sdf.format(new Date()));
 
                 organisationLog.log(false, false, "OrganizationAccess.saveOrganizationFromDir:", " Manage deployment with options " + parametersLoad.getInfos());
                 OrganizationIntSource organizationSource = null;
@@ -117,33 +119,34 @@ public class AmericanOrganizationAPI {
                     organizationSource = new OrganizationSourceCSV();
                     ((OrganizationSourceCSV) organizationSource).loadFromFile(file.getCanonicalPath(), null);
                 } else {
-                    statusLoad.put(cstActionStatus, "unknow file format");
-                    statusLoad.put(cstActionErrors, "unknow file format : only .csv is accepted]");
+                    statusLoad.put(CSTACTION_STATUS, "unknow file format");
+                    statusLoad.put(CSTACTION_ERRORS, "unknow file format : only .csv is accepted]");
                     continue;
                 }
 
                 AmericanOrganizationAPI organizationAccess = new AmericanOrganizationAPI(identityAPI, profileAPI);
                 OrganizationLog organizationLog = organizationAccess.saveOrganisation(organizationSource, parametersLoad);
-                HashMap<String, Item.StatisticOnItem> statistics = organizationAccess.getStatistics();
+                Map<String, Item.StatisticOnItem> statistics = organizationAccess.getStatistics();
 
+                
                 // Now save the statistics on the JSSON
-                status += "+ is created,~ is modified, - is deleted;";
+                status.append( "+ is created,~ is modified, - is deleted;");
                 for (String item : statistics.keySet()) {
                     Item.StatisticOnItem oneStats = statistics.get(item);
-                    status += "(" + item + ": +" + oneStats.nbCreatedItem + " ~ " + oneStats.nbUpdatedItem + " - " + oneStats.nbPurgedItem + " in " + oneStats.totalTimeOperation + " ms ";
+                    status.append( "(" + item + ": +" + oneStats.nbCreatedItem + " ~ " + oneStats.nbUpdatedItem + " - " + oneStats.nbPurgedItem + " in " + oneStats.totalTimeOperation + " ms ");
                     if (oneStats.nbCreatedItem + oneStats.nbUpdatedItem + oneStats.nbPurgedItem > 0)
-                        status += " average " + (oneStats.totalTimeOperation / (oneStats.nbCreatedItem + oneStats.nbUpdatedItem + oneStats.nbPurgedItem)) + " ms";
-                    status += "),";
+                        status.append( " average " + (oneStats.totalTimeOperation / (oneStats.nbCreatedItem + oneStats.nbUpdatedItem + oneStats.nbPurgedItem)) + " ms");
+                    status.append( "),");
                 }
-                status += organizationLog.getLog();
-                errors += organizationLog.getErrors();
+                status.append( organizationLog.getLog());
+                errors.append( organizationLog.getErrors());
             } catch (Exception e) {
                 StringWriter sw = new StringWriter();
                 e.printStackTrace(new PrintWriter(sw));
                 String exceptionDetails = sw.toString();
 
                 organisationLog.log(true, true, "OrganizationAccess.saveOrganizationFromDir:", "Error on deployment " + e.toString() + " at " + exceptionDetails);
-                errors += "Failure during import;";
+                errors.append( "Failure during import;");
             }
 
             // now move the file to the output directory
@@ -159,8 +162,6 @@ public class AmericanOrganizationAPI {
 
                 File outputFile = new File(outputFileName);
                 outputFile.createNewFile();
-
-                String inputFileName = file.getCanonicalPath();
 
                 OutputStream outStream = new FileOutputStream(outputFile);
                 InputStream inStream = new FileInputStream(file);
@@ -187,14 +188,14 @@ public class AmericanOrganizationAPI {
                     organisationLog.log(true, true, "OrganizationAccess.saveOrganizationFromDir:", "American.groovy: error during delete " + e.toString());
                 }
 
-                status += "File move to archive;";
+                status.append( "File move to archive;");
             } catch (Exception e) {
                 organisationLog.log(true, true, "OrganizationAccess.saveOrganizationFromDir:", "American.groovy: error during move " + e.toString());
-                status += "Done but cannot move the archive to the output folder";
+                status.append( "Done but cannot move the archive to the output folder");
             }
 
-            statusLoad.put(cstActionStatus, status);
-            statusLoad.put(cstActionErrors, errors);
+            statusLoad.put(CSTACTION_STATUS, status.toString());
+            statusLoad.put(CSTACTION_ERRORS, errors.toString());
 
             listStatusLoad.add(statusLoad);
 
@@ -207,9 +208,9 @@ public class AmericanOrganizationAPI {
         }
         if (countNbFilesDetected == 0) {
             HashMap<String, String> statusLoad = new HashMap<>();
-            statusLoad.put(cstActionStatus, "No files detected "+analyseContentDirectory.toString());
-            statusLoad.put(cstActionName, "");
-            statusLoad.put(cstActionTimeStamp, sdf.format(new Date()));
+            statusLoad.put(CSTACTION_STATUS, "No files detected "+analyseContentDirectory.toString());
+            statusLoad.put(CSTACTION_NAME, "");
+            statusLoad.put(CSTACTION_TIMESTAMP, sdf.format(new Date()));
 
             listStatusLoad.add(statusLoad);
 
@@ -339,16 +340,16 @@ public class AmericanOrganizationAPI {
                 ItemProfileMember.purgeFromList(loadedItem.get(ItemProfileMember.cstItemName), parametersLoad, profileAPI, organizationLog);
 
         } catch (Exception e) {
-            organizationLog.log(true, true, "OrganizationAccess.saveOrganization:", " in Error " + e.toString());
+            organizationLog.log(true, true, ORGANIZATION_ACCESS_SAVE_ORGANIZATION, " in Error " + e.toString());
         } catch (Error er) {
-            organizationLog.log(true, true, "OrganizationAccess.saveOrganization:", " in Error " + er.toString());
+            organizationLog.log(true, true, ORGANIZATION_ACCESS_SAVE_ORGANIZATION, " in Error " + er.toString());
         }
         
         // close the source now
         try {
             source.endInput(organizationLog);
         } catch (Exception e) {
-            organizationLog.log(true, true, "OrganizationAccess.saveOrganization:", "Error during close the source "+ e.toString());
+            organizationLog.log(true, true, ORGANIZATION_ACCESS_SAVE_ORGANIZATION, "Error during close the source "+ e.toString());
 
         }
 
@@ -356,7 +357,7 @@ public class AmericanOrganizationAPI {
     }
 
     private Long userProfileId = null;
-    private HashSet<Long> registerMaybeInUserProfile = new HashSet<Long>();
+    private HashSet<Long> registerMaybeInUserProfile = new HashSet<>();
 
     /**
      * the user IS systematicaly referenced in the User Profile API
@@ -428,7 +429,7 @@ public class AmericanOrganizationAPI {
      * 
      * @return
      */
-    public HashMap<String, Item.StatisticOnItem> getStatistics() {
+    public Map<String, Item.StatisticOnItem> getStatistics() {
         return loadedItem;
     }
 
@@ -465,19 +466,14 @@ public class AmericanOrganizationAPI {
             fileoutput.write(xmlContent.getBytes());
             fileoutput.close();
 
-        } catch (OrganizationExportException e) {
-            organisationLog.log(true, true, "OrganizationAccess.getOrganizationOnXml", "Error " + e.toString());
-            return;
-        } catch (FileNotFoundException e) {
-            organisationLog.log(true, true, "OrganizationAccess.getOrganizationOnXml", "Error " + e.toString());
-        } catch (IOException e) {
+        } catch (OrganizationExportException | IOException e) {
             organisationLog.log(true, true, "OrganizationAccess.getOrganizationOnXml", "Error " + e.toString());
         }
     }
 
     // acteur filter .
     public List<Long> getCandidates(Long taskId, OrganizationIntSource source) {
-        return new ArrayList<Long>();
+        return new ArrayList<>();
     }
 
     /*
@@ -492,42 +488,43 @@ public class AmericanOrganizationAPI {
      * *************************************************************************
      * *******
      */
-    public final static String cstDropZoneProperty = "dropzone";
-    public final static String cstArchiveZoneProperty = "archivezone";
+    public final static String CSTDROPZONEPROPERTY = "dropzone";
+    public final static String CSTARCHIVEZONEPROPERTY = "archivezone";
 
     public static class Configuration {
 
         // public String defaultArchivezone = defaultDropzone + "/archive";
-        Map<String, Object> parametersOperation = new HashMap<String, Object>();
+        Map<String, Object> parametersOperation = new HashMap<>();
 
         List<BEvent> listEvents;
 
         public String getDropZone() {
-            Object value = parametersOperation.get(cstDropZoneProperty);
+            Object value = parametersOperation.get(CSTDROPZONEPROPERTY);
             if (value == null)
                 return "";
             return value.toString().trim();
         }
 
         public void setDropZone(String dropZone) {
-            parametersOperation.put(cstDropZoneProperty, dropZone);
+            parametersOperation.put(CSTDROPZONEPROPERTY, dropZone);
         }
 
         public String getArchiveZone() {
-            Object value = parametersOperation.get(cstArchiveZoneProperty);
+            Object value = parametersOperation.get(CSTARCHIVEZONEPROPERTY);
             if (value == null)
                 return "";
             return value.toString().trim();
         }
 
         public void setArchiveZone(String archiveZone) {
-            parametersOperation.put(cstArchiveZoneProperty, archiveZone);
+            parametersOperation.put(CSTARCHIVEZONEPROPERTY, archiveZone);
         }
 
         public Map<String, Object> getMap() {
             return parametersOperation;
         }
 
+        @SuppressWarnings({ "rawtypes", "unchecked" })
         public void setFromJson(String jsontSt) {
             Object jsonObject = JSONValue.parse(jsontSt);
             if (jsonObject instanceof Map)
@@ -535,7 +532,7 @@ public class AmericanOrganizationAPI {
 
         }
 
-    };
+    }
 
     /**
      * save configuration
@@ -609,7 +606,7 @@ public class AmericanOrganizationAPI {
      * @return
      */
     private String checkFileReadyToProcess(File file, StringBuilder analyseContentDirectory) {
-        String prefixSelected = null;
+        
         for (String prefix : listFilePrefix) {
 
             if (!file.isFile() || !file.getName().endsWith(prefix)) {

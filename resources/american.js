@@ -12,13 +12,13 @@
 		};
 	}
 
-	var appCommand = angular.module('american', ['ngAnimate', 'ui.bootstrap', 'timer', 'toaster', 'angularFileUpload']);
+	var appCommand = angular.module('american', ['ngAnimate', 'ui.bootstrap', 'timer', 'toaster', 'angularFileUpload', 'ngCookies']);
 
 //	Constant used to specify resource base path (facilitates integration into a Bonita custom page)
 	appCommand.constant('RESOURCE_PATH', 'pageResource?page=custompage_american&location=');
 
 //	User app list controller
-	appCommand.controller('DigesterController', function($rootScope, $scope, $upload, $http, toaster) {
+	appCommand.controller('DigesterController', function($rootScope, $scope, $upload, $http, toaster, $cookies) {
 		var me = this;
 		
 		this.currentUploadFileIndex = 0;
@@ -86,10 +86,20 @@
 			toaster.flush();
 		};
 		
-			
+		this.getHttpConfig = function () {
+			var additionalHeaders = {};
+			var csrfToken = $cookies.get('X-Bonita-API-Token');
+			if (csrfToken) {
+				additionalHeaders ['X-Bonita-API-Token'] = csrfToken;
+			}
+			var config= {"headers": additionalHeaders};
+			console.log("GetHttpConfig : "+angular.toJson( config));
+			return config;
+		}
+		
 		this.refreshfrombtn = function() {
 			console.log("refreshfrombtn : already in progress?  "+this.refreshisrunning);
-			
+			this.loadmessage="";
 			if(!this.refreshisrunning) {
 				this.refreshisrunning = true;
 			
@@ -107,7 +117,7 @@
 				
 				var url='?page=custompage_american&action=refresh&t='+d.getTime();
 				
-				$http.get( url )
+				$http.get( url, this.getHttpConfig() )
 					.success( function (result) {
 						self.wait=false;
 						var actionsList = result.actions;
@@ -223,7 +233,7 @@
 			self.wait=true;
 			var d = new Date();
 			
-			$http.get( '?page=custompage_american&action=getproperties&t='+d.getTime() )
+			$http.get( '?page=custompage_american&action=getproperties&t='+d.getTime(), this.getHttpConfig() )
 					.success( function ( result ) {
 						self.wait=false;
 						
@@ -279,7 +289,7 @@
 			var json = encodeURI( angular.toJson( this.options, false));
 			var d = new Date();
 			
-			$http.get( '?page=custompage_american&action=setproperties&paramjson='+json+'&t='+d.getTime() )
+			$http.get( '?page=custompage_american&action=setproperties&paramjson='+json+'&t='+d.getTime(), this.getHttpConfig() )
 				.success( function ( jsonResult ) {
 					self.wait=false;
 					
@@ -323,60 +333,51 @@
 		};
 
 		
-		var meForUpload = this;
+		var self = this;
 		this.savetoaster= toaster;
 		$scope.$watch('files', function() {
-			meForUpload.currentUploadFileIndex = 0;
-			meForUpload.loadmessage="";
+			self.currentUploadFileIndex = 0;
+			self.loadmessage="";
 			for (var i = 0; i < $scope.files.length; i++) {
 				var file = $scope.files[i];
-				meForUpload.loadmessage="Upload ["+file.name+"] ...";
-				meForUpload.savetoaster.pop('success', "Start upload ["+file.name+"]", "");
+				self.loadmessage="Upload ["+file.name+"] ...";
+				self.savetoaster.pop('success', "Start upload ["+file.name+"]", "");
 				this.upload = $upload.upload({
 					url: 'fileUpload',
 					method: 'POST',
-					data: {myObj: this.myModelObj},
+					data: {'myobj':'myobj'},
 					file: file
 				}).progress(function(evt) {
 //					console.log('progress: ' + parseInt(100.0 * evt.loaded / evt.total) + '% file :'+ evt.config.file.name);
 				}).success(function(data, status, headers, config) {
 					console.log('file ' + config.file.name + 'is uploaded successfully. Response: ' + data);
 					var url='?page=custompage_american&action=uploadbar&file=' + data;
-					url = url + '&name=' + $scope.files[meForUpload.currentUploadFileIndex].name;
-					meForUpload.currentUploadFileIndex = meForUpload.currentUploadFileIndex + 1;
-					$.ajax({
-						method : 'GET',
-						url : url,
-						contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
-						success : function (result) {
-							console.log('file ' + config.file.name + 'is given to american monitor. Response: ' + result);
-							var resultArray = JSON.parse(result)
-							var arrayLength = resultArray.length;
-							console.log('arrayLength= ' + arrayLength );
-							for (var i = 0; i < arrayLength; i++) {
-								$rootScope.history.unshift(resultArray[i]);
-								if(resultArray[i].status.toString().startsWith("Error: ")) {
-									meForUpload.loadmessage="File ["+config.file.name+"] loaded with error";
-									meForUpload.savetoaster.pop('warning', "the file ["+config.file.name+"] has been avoided due to error", "");
-								} else {
-									meForUpload.loadmessage="File ["+config.file.name+"] loaded";
-									// toaster.pop('success', "the file ["+config.file.name+"] has been uploaded_2", "");
-									meForUpload.savetoaster.pop('success', "the file ["+config.file.name+"] has been uploaded", "");
-								}
+					url = url + '&name=' + $scope.files[self.currentUploadFileIndex].name;
+					console.log('call URL=' +url); 
+					self.currentUploadFileIndex = self.currentUploadFileIndex + 1;
+					$http.get(url, self.getHttpConfig()) 
+						.success( function (result) {
+							console.log('file ' + config.file.name + 'is given to american monitor. Response: ' + angular.toJson(result));
+							if (result.status == "Success") {
+								self.savetoaster.pop('success', result.explanation);
+								self.loadmessage="Uploaded ["+file.name+"] with success";
 							}
-							// $scope.$apply();
-						},
-						error: function ( result ) {
+							else { 
+								self.savetoaster.pop('warning',  result.explanation);
+								self.loadmessage="Upload ["+file.name+"] failed "+result.explanation;
+							}
+						})
+						.error( function ( result ) {
 							var resultArray = JSON.parse(result)
 							var arrayLength = resultArray.length;
 							for (var i = 0; i < arrayLength; i++) {
 								$rootScope.history.unshift(resultArray[i]);
 							}
-							meForUpload.loadmessage="File ["+config.file.name+"] loaded with error";
-							meForUpload.savetoaster.pop('error', "An error occurred uploading a file ["+config.file.name+"] in the monitor directory", "");
+							self.loadmessage="File ["+config.file.name+"] loaded with error";
+							self.savetoaster.pop('error', "An error occurred uploading a file ["+config.file.name+"] in the monitor directory", "");
 							// $scope.$apply();
-						}
-					});
+						});
+					
 				}).error(function() {} );
 			}
 		});
